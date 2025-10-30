@@ -1,0 +1,21 @@
+# Build results
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+
+# User-specific files
+*.user
+*.rsuser
+
+# Logs
+*.log
+
+# Secrets
+appsettings.Development.json
+
+node_modules/
+dist/
+.env
