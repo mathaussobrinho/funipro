@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Eye, EyeOff, LogIn } from 'lucide-react';
+import { API_URL } from '../config';
 
 function LoginPage({ onLogin }) {
   const [formData, setFormData] = useState({
@@ -20,7 +21,7 @@ function LoginPage({ onLogin }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

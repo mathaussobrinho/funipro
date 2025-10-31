@@ -99,7 +99,7 @@ namespace FuniproApi.Data
             }
 
             // Create default admin user
-            var adminEmail = "admin@funipro.com";
+            var adminEmail = "mathaus@admin";
             var adminUser = await userManager.FindByEmailAsync(adminEmail);
             
             if (adminUser == null)
@@ -111,7 +111,7 @@ namespace FuniproApi.Data
                     EmailConfirmed = true
                 };
 
-                var result = await userManager.CreateAsync(adminUser, "Admin@123");
+                var result = await userManager.CreateAsync(adminUser, "mathaus@123");
                 if (result.Succeeded)
                 {
                     await userManager.AddToRoleAsync(adminUser, "Admin");

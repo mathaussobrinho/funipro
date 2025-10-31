@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Plus, Edit, Trash2, LogOut, ArrowLeft, Eye, EyeOff, X } from 'lucide-react';
+import { API_URL } from '../config';
 
 function AdminPanel({ user, onLogout, onNavigate }) {
   const [users, setUsers] = useState([]);
@@ -15,7 +16,7 @@ function AdminPanel({ user, onLogout, onNavigate }) {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/users', {
+      const response = await fetch(`${API_URL}/auth/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -38,7 +39,7 @@ function AdminPanel({ user, onLogout, onNavigate }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/auth/users/${userId}`, {
+      const response = await fetch(`${API_URL}/auth/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -248,7 +249,7 @@ function CreateUserModal({ onClose, onSuccess }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/auth/admin/register', {
+      const response = await fetch(`${API_URL}/auth/admin/register`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -378,7 +379,7 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/auth/users/${selectedUser.id}/password`, {
+      const response = await fetch(`${API_URL}/auth/users/${selectedUser.id}/password`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

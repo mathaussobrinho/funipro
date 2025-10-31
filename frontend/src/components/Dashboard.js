@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, TrendingUp, DollarSign, Calendar, Plus, LogOut, Settings, Edit, Trash2, Phone, Mail, X, Save } from 'lucide-react';
+import { API_URL } from '../config';
 
 function Dashboard({ user, onLogout, onNavigate }) {
   const [dashboard, setDashboard] = useState(null);
@@ -29,7 +30,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
   const fetchDashboard = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/deals/dashboard', {
+      const response = await fetch(`${API_URL}/deals/dashboard`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -62,7 +63,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/deals/${dealId}`, {
+      const response = await fetch(`${API_URL}/deals/${dealId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -91,7 +92,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
     if (draggedDeal && draggedDeal.status !== newStatus) {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/deals/${draggedDeal.id}/status`, {
+        const response = await fetch(`${API_URL}/deals/${draggedDeal.id}/status`, {
           method: 'PATCH',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -388,8 +389,8 @@ function DealModalComponent({ deal, onClose, onSave }) {
     try {
       const token = localStorage.getItem('token');
       const url = deal 
-        ? `http://localhost:5000/api/deals/${deal.id}`
-        : 'http://localhost:5000/api/deals';
+        ? `${API_URL}/deals/${deal.id}`
+        : `${API_URL}/deals`;
       
       const method = deal ? 'PUT' : 'POST';
       
