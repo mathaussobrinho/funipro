@@ -52,7 +52,12 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", builder =>
     {
-        builder.WithOrigins("http://localhost:3000", "https://funipro.shop", "https://www.funipro.shop")
+        builder.WithOrigins(
+                   "http://localhost:3000",
+                   "https://funipro.shop",
+                   "https://www.funipro.shop",
+                   "https://api.funipro.shop"
+               )
                .AllowAnyMethod()
                .AllowAnyHeader()
                .AllowCredentials();
