@@ -205,21 +205,6 @@ function AdminPanel({ user, onLogout, onNavigate }) {
           }}
         />
       )}
-
-      {/* Footer */}
-      <footer className="bg-white border-t mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-600 mb-2">Desenvolvido por</p>
-          <a 
-            href="https://sysmath.com.br" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-block text-blue-600 font-semibold hover:scale-110 transform transition-all duration-300 hover:text-purple-600"
-          >
-            Sysmath.com.br
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }
