@@ -198,6 +198,25 @@ function Dashboard({ user, onLogout, onNavigate }) {
     }).format(value);
   };
 
+  // Função para calcular o tamanho da fonte baseado no comprimento do texto
+  const getFontSize = (value) => {
+    const formatted = formatCurrency(value);
+    const length = formatted.length;
+    
+    // Ajustar o tamanho baseado no comprimento - valores menores para garantir que caiba tudo
+    if (length <= 10) {
+      return '1.125rem'; // 18px
+    } else if (length <= 12) {
+      return '1rem'; // 16px
+    } else if (length <= 15) {
+      return '0.875rem'; // 14px
+    } else if (length <= 18) {
+      return '0.75rem'; // 12px
+    } else {
+      return '0.625rem'; // 10px
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -373,18 +392,30 @@ function Dashboard({ user, onLogout, onNavigate }) {
                   <div className="bg-gray-50 dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4 flex flex-col" style={{ minHeight: '600px' }}>
                     <div className="sticky top-4 space-y-4">
                       {/* Valor Total */}
-                      <div className="bg-white dark:bg-gray-700 border border-green-200 dark:border-green-800 rounded-lg p-4">
-                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Valor Total</h4>
-                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                          {formatCurrency(values.valorTotal)}
+                      <div className="bg-white dark:bg-gray-700 border border-green-200 dark:border-green-800 rounded-lg p-4 text-center">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase">Valor Total</h4>
+                        <div className="w-full flex items-center justify-center px-3 py-2">
+                          <div className="font-bold text-green-600 dark:text-green-400" style={{ 
+                            fontSize: getFontSize(values.valorTotal),
+                            whiteSpace: 'nowrap',
+                            overflow: 'visible'
+                          }}>
+                            {formatCurrency(values.valorTotal)}
+                          </div>
                         </div>
                       </div>
 
                       {/* Valor Líquido */}
-                      <div className="bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Valor Líquido</h4>
-                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                          {formatCurrency(values.valorLiquido)}
+                      <div className="bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-center">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-3 uppercase">Valor Líquido</h4>
+                        <div className="w-full flex items-center justify-center px-3 py-2">
+                          <div className="font-bold text-blue-600 dark:text-blue-400" style={{ 
+                            fontSize: getFontSize(values.valorLiquido),
+                            whiteSpace: 'nowrap',
+                            overflow: 'visible'
+                          }}>
+                            {formatCurrency(values.valorLiquido)}
+                          </div>
                         </div>
                       </div>
                     </div>

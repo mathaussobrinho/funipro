@@ -110,6 +110,8 @@ namespace FuniproApi.Models
         [Required]
         [MinLength(6)]
         public string Password { get; set; }
+        
+        public string? Role { get; set; }
     }
 
     public class DealDto

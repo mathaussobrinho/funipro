@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System;
 using FuniproApi.Data;
 using FuniproApi.Models;
 
@@ -70,7 +71,14 @@ namespace FuniproApi.Services
                 return null;
             }
 
-            await _userManager.AddToRoleAsync(user, "User");
+            // Atribuir role conforme especificado, ou "User" como padrão
+            var roleToAssign = !string.IsNullOrEmpty(registerDto.Role) && 
+                               (registerDto.Role.Equals("Admin", StringComparison.OrdinalIgnoreCase) || 
+                                registerDto.Role.Equals("User", StringComparison.OrdinalIgnoreCase))
+                ? registerDto.Role
+                : "User";
+
+            await _userManager.AddToRoleAsync(user, roleToAssign);
 
             var roles = await _userManager.GetRolesAsync(user);
             var token = GenerateJwtToken(user, roles);

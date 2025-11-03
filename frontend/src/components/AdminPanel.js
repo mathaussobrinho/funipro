@@ -212,7 +212,8 @@ function AdminPanel({ user, onLogout, onNavigate }) {
 function CreateUserModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     email: '',
-    password: ''
+    password: '',
+    role: 'User'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -313,6 +314,20 @@ function CreateUserModal({ onClose, onSuccess }) {
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Tipo de Usuário *
+              </label>
+              <select
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="User">Usuário Padrão</option>
+                <option value="Admin">Administrador</option>
+              </select>
             </div>
           </div>
         </div>
