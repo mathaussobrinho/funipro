@@ -82,14 +82,14 @@ function App() {
         </div>
       </div>
       {/* Footer */}
-      <footer className="bg-gray-50 border-t border-gray-200 py-4 mt-auto">
+      <footer className="bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 py-4 mt-auto">
         <div className="max-w-7xl mx-auto px-8 text-center">
-          <p className="text-gray-500 text-xs mb-1">Desenvolvido por</p>
+          <p className="text-gray-500 dark:text-gray-400 text-xs mb-1">Desenvolvido por</p>
           <a 
             href="https://sysmath.com.br" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="inline-block text-gray-600 font-medium text-sm hover:text-blue-600 transition-colors duration-200"
+            className="inline-block text-gray-600 dark:text-gray-300 font-medium text-sm hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200"
           >
             Sysmath.com.br
           </a>

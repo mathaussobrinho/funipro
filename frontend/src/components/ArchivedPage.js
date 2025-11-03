@@ -128,17 +128,17 @@ function ArchivedPage({ user, onLogout, onNavigate }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-400">
             Negócios Arquivados
           </h1>
-          <p className="text-gray-600 mt-1">Visualize e gerencie negócios arquivados</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Visualize e gerencie negócios arquivados</p>
         </div>
 
         {/* Filtros */}
-        <div className="bg-white rounded-xl shadow-sm border p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -147,15 +147,15 @@ function ArchivedPage({ user, onLogout, onNavigate }) {
                 placeholder="Buscar por título, empresa, contato ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500"
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500" size={20} />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               >
                 <option value="">Todos os status</option>
                 <option value="0">Lead</option>
@@ -170,9 +170,9 @@ function ArchivedPage({ user, onLogout, onNavigate }) {
 
         {/* Lista agrupada por data */}
         {Object.keys(groupedByDate).length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border p-12 text-center">
-            <Archive size={64} className="mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-500">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-12 text-center">
+            <Archive size={64} className="mx-auto text-gray-400 dark:text-gray-500 mb-4" />
+            <p className="text-gray-500 dark:text-gray-400">
               {archivedDeals.length === 0 
                 ? 'Nenhum negócio arquivado ainda' 
                 : 'Nenhum negócio encontrado com os filtros aplicados'}
@@ -181,42 +181,42 @@ function ArchivedPage({ user, onLogout, onNavigate }) {
         ) : (
           <div className="space-y-6">
             {Object.entries(groupedByDate).map(([date, deals]) => (
-              <div key={date} className="bg-white rounded-xl shadow-sm border overflow-hidden">
-                <div className="bg-gray-50 px-6 py-3 border-b">
+              <div key={date} className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 overflow-hidden">
+                <div className="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-b dark:border-gray-600">
                   <div className="flex items-center space-x-2">
-                    <Calendar size={18} className="text-gray-500" />
-                    <h3 className="font-semibold text-gray-700">{date}</h3>
-                    <span className="text-sm text-gray-500">({deals.length} {deals.length === 1 ? 'negócio' : 'negócios'})</span>
+                    <Calendar size={18} className="text-gray-500 dark:text-gray-400" />
+                    <h3 className="font-semibold text-gray-700 dark:text-gray-200">{date}</h3>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">({deals.length} {deals.length === 1 ? 'negócio' : 'negócios'})</span>
                   </div>
                 </div>
-                <div className="divide-y">
+                <div className="divide-y dark:divide-gray-700">
                   {deals.map((deal) => (
-                    <div key={deal.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                    <div key={deal.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-semibold text-gray-900">{deal.title}</h4>
-                            <span className={`px-2 py-1 rounded-full text-xs ${statusConfig[deal.status]?.color || 'bg-gray-100 text-gray-600'}`}>
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">{deal.title}</h4>
+                            <span className={`px-2 py-1 rounded-full text-xs ${statusConfig[deal.status]?.color || 'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
                               {statusConfig[deal.status]?.name || 'Desconhecido'}
                             </span>
                           </div>
                           
                           {deal.company && (
-                            <p className="text-sm text-gray-600 mb-1">Empresa: {deal.company}</p>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Empresa: {deal.company}</p>
                           )}
                           
                           {deal.contactName && (
-                            <p className="text-sm text-gray-700 mb-1">Contato: {deal.contactName}</p>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Contato: {deal.contactName}</p>
                           )}
                           
-                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
+                          <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500 dark:text-gray-400">
                             {deal.email && (
                               <span>{deal.email}</span>
                             )}
                             {deal.phone && (
                               <span>{deal.phone}</span>
                             )}
-                            <span className="font-semibold text-green-600">
+                            <span className="font-semibold text-green-600 dark:text-green-400">
                               {formatCurrency(deal.value)}
                             </span>
                           </div>

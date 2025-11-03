@@ -217,15 +217,15 @@ function Dashboard({ user, onLogout, onNavigate }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         {/* Header simplificado */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-400">
               Funil de Vendas
             </h1>
-            <p className="text-gray-600 mt-1">Gerencie seus negócios e acompanhe o progresso</p>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">Gerencie seus negócios e acompanhe o progresso</p>
           </div>
           <button
             onClick={handleCreateDeal}
@@ -250,7 +250,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                 <React.Fragment key={status}>
                   {/* Coluna Fechado */}
                   <div
-                    className="bg-white rounded-xl shadow-sm border flex flex-col"
+                    className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 flex flex-col"
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, parseInt(status))}
                     style={{ minHeight: '600px' }}
@@ -272,7 +272,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                           key={deal.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, deal)}
-                          className={`bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                          className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
                             birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
                           }`}
                           style={birthdaySoon ? {
@@ -280,7 +280,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                           } : {}}
                         >
                         <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-gray-900 text-sm">{deal.title}</h4>
+                          <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{deal.title}</h4>
                           <div className="flex space-x-1">
                             <button
                               onClick={() => handleEditDeal(deal)}
@@ -307,30 +307,30 @@ function Dashboard({ user, onLogout, onNavigate }) {
                         </div>
                         
                         {deal.company && (
-                          <p className="text-gray-600 text-xs mb-1">{deal.company}</p>
+                          <p className="text-gray-600 dark:text-white text-xs mb-1">{deal.company}</p>
                         )}
                         
                         {deal.contactName && (
-                          <p className="text-gray-700 text-sm mb-2">{deal.contactName}</p>
+                          <p className="text-gray-700 dark:text-white text-sm mb-2">{deal.contactName}</p>
                         )}
                         
                         <div className="flex flex-col space-y-1 mb-3">
                           {deal.email && (
-                            <div className="flex items-center text-xs text-gray-600">
-                              <Mail size={12} className="mr-1" />
+                            <div className="flex items-center text-xs text-gray-600 dark:text-white">
+                              <Mail size={12} className="mr-1 text-gray-600 dark:text-white" />
                               {deal.email}
                             </div>
                           )}
                           {deal.phone && (
-                            <div className="flex items-center text-xs text-gray-600">
-                              <Phone size={12} className="mr-1" />
+                            <div className="flex items-center text-xs text-gray-600 dark:text-white">
+                              <Phone size={12} className="mr-1 text-gray-600 dark:text-white" />
                               {deal.phone}
                             </div>
                           )}
                         </div>
                         
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-green-600 text-sm">
+                          <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                             {formatCurrency(deal.value)}
                           </span>
                           <span className={`px-2 py-1 rounded-full text-xs ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
@@ -341,9 +341,9 @@ function Dashboard({ user, onLogout, onNavigate }) {
                         {deal.paymentMethod !== null && deal.paymentMethod !== undefined && (
                           <div className="mt-2">
                             <span className={`px-2 py-1 rounded-full text-xs ${
-                              deal.paymentMethod === 0 ? 'bg-blue-100 text-blue-600' :
-                              deal.paymentMethod === 1 ? 'bg-green-100 text-green-600' :
-                              'bg-gray-100 text-gray-600'
+                              deal.paymentMethod === 0 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                              deal.paymentMethod === 1 ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                              'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
                             }`}>
                               {deal.paymentMethod === 0 ? '💳 Cartão' :
                                deal.paymentMethod === 1 ? '💸 PIX' :
@@ -353,13 +353,13 @@ function Dashboard({ user, onLogout, onNavigate }) {
                         )}
                         
                         {deal.birthday && (
-                          <div className="mt-2 text-xs text-gray-500">
+                          <div className="mt-2 text-xs text-gray-500 dark:text-white">
                             🎂 {new Date(deal.birthday).toLocaleDateString('pt-BR')}
                           </div>
                         )}
                         
                         {deal.expectedCloseDate && (
-                          <div className="mt-2 text-xs text-gray-500">
+                          <div className="mt-2 text-xs text-gray-500 dark:text-white">
                             Previsão: {new Date(deal.expectedCloseDate).toLocaleDateString('pt-BR')}
                           </div>
                         )}
@@ -370,20 +370,20 @@ function Dashboard({ user, onLogout, onNavigate }) {
                   </div>
 
                   {/* Painel de Valores */}
-                  <div className="bg-gray-50 rounded-xl shadow-sm border p-4 flex flex-col" style={{ minHeight: '600px' }}>
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-4 flex flex-col" style={{ minHeight: '600px' }}>
                     <div className="sticky top-4 space-y-4">
                       {/* Valor Total */}
-                      <div className="bg-white border border-green-200 rounded-lg p-4">
-                        <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase">Valor Total</h4>
-                        <div className="text-2xl font-bold text-green-600">
+                      <div className="bg-white dark:bg-gray-700 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Valor Total</h4>
+                        <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                           {formatCurrency(values.valorTotal)}
                         </div>
                       </div>
 
                       {/* Valor Líquido */}
-                      <div className="bg-white border border-blue-200 rounded-lg p-4">
-                        <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase">Valor Líquido</h4>
-                        <div className="text-2xl font-bold text-blue-600">
+                      <div className="bg-white dark:bg-gray-700 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                        <h4 className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Valor Líquido</h4>
+                        <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                           {formatCurrency(values.valorLiquido)}
                         </div>
                       </div>
@@ -397,7 +397,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
             return (
               <div
                 key={status}
-                className="bg-white rounded-xl shadow-sm border flex flex-col"
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 flex flex-col"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, parseInt(status))}
                 style={{ minHeight: '600px' }}
@@ -419,7 +419,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                       key={deal.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, deal)}
-                      className={`bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                      className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
                         birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
                       }`}
                       style={birthdaySoon ? {
@@ -427,7 +427,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                       } : {}}
                     >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-semibold text-gray-900 text-sm">{deal.title}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{deal.title}</h4>
                       <div className="flex space-x-1">
                         <button
                           onClick={() => handleEditDeal(deal)}
@@ -454,30 +454,30 @@ function Dashboard({ user, onLogout, onNavigate }) {
                     </div>
                     
                     {deal.company && (
-                      <p className="text-gray-600 text-xs mb-1">{deal.company}</p>
+                      <p className="text-gray-600 dark:text-white text-xs mb-1">{deal.company}</p>
                     )}
                     
                     {deal.contactName && (
-                      <p className="text-gray-700 text-sm mb-2">{deal.contactName}</p>
+                      <p className="text-gray-700 dark:text-white text-sm mb-2">{deal.contactName}</p>
                     )}
                     
                     <div className="flex flex-col space-y-1 mb-3">
                       {deal.email && (
-                        <div className="flex items-center text-xs text-gray-600">
-                          <Mail size={12} className="mr-1" />
+                        <div className="flex items-center text-xs text-gray-600 dark:text-white">
+                          <Mail size={12} className="mr-1 text-gray-600 dark:text-white" />
                           {deal.email}
                         </div>
                       )}
                       {deal.phone && (
-                        <div className="flex items-center text-xs text-gray-600">
-                          <Phone size={12} className="mr-1" />
+                        <div className="flex items-center text-xs text-gray-600 dark:text-white">
+                          <Phone size={12} className="mr-1 text-gray-600 dark:text-white" />
                           {deal.phone}
                         </div>
                       )}
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="font-semibold text-green-600 text-sm">
+                      <span className="font-semibold text-green-600 dark:text-green-400 text-sm">
                         {formatCurrency(deal.value)}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
@@ -488,9 +488,9 @@ function Dashboard({ user, onLogout, onNavigate }) {
                     {deal.paymentMethod !== null && deal.paymentMethod !== undefined && (
                       <div className="mt-2">
                         <span className={`px-2 py-1 rounded-full text-xs ${
-                          deal.paymentMethod === 0 ? 'bg-blue-100 text-blue-600' :
-                          deal.paymentMethod === 1 ? 'bg-green-100 text-green-600' :
-                          'bg-gray-100 text-gray-600'
+                          deal.paymentMethod === 0 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                          deal.paymentMethod === 1 ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                          'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
                         }`}>
                           {deal.paymentMethod === 0 ? '💳 Cartão' :
                            deal.paymentMethod === 1 ? '💸 PIX' :
@@ -500,13 +500,13 @@ function Dashboard({ user, onLogout, onNavigate }) {
                     )}
                     
                     {deal.birthday && (
-                      <div className="mt-2 text-xs text-gray-500">
+                      <div className="mt-2 text-xs text-gray-500 dark:text-white">
                         🎂 {new Date(deal.birthday).toLocaleDateString('pt-BR')}
                       </div>
                     )}
                     
                     {deal.expectedCloseDate && (
-                      <div className="mt-2 text-xs text-gray-500">
+                      <div className="mt-2 text-xs text-gray-500 dark:text-white">
                         Previsão: {new Date(deal.expectedCloseDate).toLocaleDateString('pt-BR')}
                       </div>
                     )}

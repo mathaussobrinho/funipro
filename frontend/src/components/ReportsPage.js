@@ -138,69 +138,69 @@ function ReportsPage({ user, onLogout, onNavigate }) {
   const chartData = getChartData();
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
       <div className="max-w-7xl mx-auto">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+          <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600 dark:from-blue-400 dark:to-purple-400">
             Relatórios e Análises
           </h1>
-          <p className="text-gray-600 mt-2">Visualize seus dados em tempo real</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-2">Visualize seus dados em tempo real</p>
         </div>
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Total Fechado</p>
-                <p className="text-2xl font-bold text-green-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Total Fechado</p>
+                <p className="text-2xl font-bold text-green-600 dark:text-green-400 mt-1">
                   {formatCurrency(chartData.totalFromClosed)}
                 </p>
               </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <TrendingUp className="text-green-600" size={24} />
+              <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
+                <TrendingUp className="text-green-600 dark:text-green-400" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Sublocação</p>
-                <p className="text-2xl font-bold text-blue-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Sublocação</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
                   {formatCurrency(chartData.totalFromSubLocation)}
                 </p>
               </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Package className="text-blue-600" size={24} />
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                <Package className="text-blue-600 dark:text-blue-400" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Dinheiro a Entrar</p>
-                <p className="text-2xl font-bold text-yellow-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Dinheiro a Entrar</p>
+                <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400 mt-1">
                   {formatCurrency(chartData.moneyToEnter)}
                 </p>
               </div>
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <ArrowUpCircle className="text-yellow-600" size={24} />
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full">
+                <ArrowUpCircle className="text-yellow-600 dark:text-yellow-400" size={24} />
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-sm border p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm">Gastos Previstos</p>
-                <p className="text-2xl font-bold text-red-600 mt-1">
+                <p className="text-gray-600 dark:text-gray-400 text-sm">Gastos Previstos</p>
+                <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
                   {formatCurrency(chartData.totalInventoryCost)}
                 </p>
               </div>
-              <div className="bg-red-100 p-3 rounded-full">
-                <ArrowDownCircle className="text-red-600" size={24} />
+              <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full">
+                <ArrowDownCircle className="text-red-600 dark:text-red-400" size={24} />
               </div>
             </div>
           </div>
@@ -209,8 +209,8 @@ function ReportsPage({ user, onLogout, onNavigate }) {
         {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Receita Mensal */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita Mensal</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receita Mensal</h3>
             {chartData.monthlyData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData.monthlyData}>
@@ -224,13 +224,13 @@ function ReportsPage({ user, onLogout, onNavigate }) {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-8">Nenhum dado disponível</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
             )}
           </div>
 
           {/* Origem do Dinheiro */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Origem do Dinheiro</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Origem do Dinheiro</h3>
             {chartData.originData.length > 0 && chartData.originData.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
@@ -253,13 +253,13 @@ function ReportsPage({ user, onLogout, onNavigate }) {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-8">Nenhum dado disponível</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
             )}
           </div>
 
           {/* Receita por Método de Pagamento */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Receita por Método de Pagamento</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Receita por Método de Pagamento</h3>
             {chartData.paymentData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData.paymentData}>
@@ -271,13 +271,13 @@ function ReportsPage({ user, onLogout, onNavigate }) {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-8">Nenhum dado disponível</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
             )}
           </div>
 
           {/* Status dos Negócios */}
-          <div className="bg-white rounded-xl shadow-sm border p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Status dos Negócios</h3>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Status dos Negócios</h3>
             {chartData.statusData.length > 0 ? (
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData.statusData}>
@@ -292,14 +292,14 @@ function ReportsPage({ user, onLogout, onNavigate }) {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-gray-500 text-center py-8">Nenhum dado disponível</p>
+              <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
             )}
           </div>
         </div>
 
         {/* Gráfico de Linha - Evolução Temporal */}
-        <div className="bg-white rounded-xl shadow-sm border p-6 mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Evolução de Receita</h3>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6 mb-6">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Evolução de Receita</h3>
           {chartData.monthlyData.length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData.monthlyData}>
