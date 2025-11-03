@@ -2,11 +2,16 @@ import React, { useState, useEffect } from 'react';
 import LoginPage from './components/LoginPage';
 import Dashboard from './components/Dashboard';
 import AdminPanel from './components/AdminPanel';
+import Sidebar from './components/Sidebar';
+import InventoryPage from './components/InventoryPage';
+import ReportsPage from './components/ReportsPage';
+import SubLocationPage from './components/SubLocationPage';
+import ArchivedPage from './components/ArchivedPage';
 
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState('dashboard');
+  const [currentPage, setCurrentPage] = useState('funnel');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,14 +32,33 @@ function App() {
     localStorage.setItem('token', token);
     localStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
-    setCurrentPage(userData.role === 'Admin' ? 'admin' : 'dashboard');
+    setCurrentPage('funnel');
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    setCurrentPage('dashboard');
+    setCurrentPage('funnel');
+  };
+
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'funnel':
+        return <Dashboard user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      case 'inventory':
+        return <InventoryPage user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      case 'reports':
+        return <ReportsPage user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      case 'sublocation':
+        return <SubLocationPage user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      case 'archived':
+        return <ArchivedPage user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      case 'admin':
+        return <AdminPanel user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+      default:
+        return <Dashboard user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+    }
   };
 
   if (loading) {
@@ -49,11 +73,30 @@ function App() {
     return <LoginPage onLogin={handleLogin} />;
   }
 
-  if (user.role === 'Admin' && currentPage === 'admin') {
-    return <AdminPanel user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
-  }
-
-  return <Dashboard user={user} onLogout={handleLogout} onNavigate={setCurrentPage} />;
+  return (
+    <div className="flex flex-col min-h-screen">
+      <div className="flex flex-1">
+        <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} user={user} onLogout={handleLogout} />
+        <div className="flex-1 ml-64">
+          {renderPage()}
+        </div>
+      </div>
+      {/* Footer */}
+      <footer className="bg-gray-50 border-t border-gray-200 py-4 mt-auto">
+        <div className="max-w-7xl mx-auto px-8 text-center">
+          <p className="text-gray-500 text-xs mb-1">Desenvolvido por</p>
+          <a 
+            href="https://sysmath.com.br" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-block text-gray-600 font-medium text-sm hover:text-blue-600 transition-colors duration-200"
+          >
+            Sysmath.com.br
+          </a>
+        </div>
+      </footer>
+    </div>
+  );
 }
 
 export default App;

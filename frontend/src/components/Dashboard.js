@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Users, TrendingUp, DollarSign, Calendar, Plus, LogOut, Settings, Edit, Trash2, Phone, Mail, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, Phone, Mail, X, Save, Archive } from 'lucide-react';
 import { API_URL } from '../config';
 
 function Dashboard({ user, onLogout, onNavigate }) {
   const [dashboard, setDashboard] = useState(null);
+  const [subLocations, setSubLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingDeal, setEditingDeal] = useState(null);
@@ -25,6 +26,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
 
   useEffect(() => {
     fetchDashboard();
+    fetchSubLocations();
   }, []);
 
   const fetchDashboard = async () => {
@@ -48,6 +50,58 @@ function Dashboard({ user, onLogout, onNavigate }) {
     }
   };
 
+  const fetchSubLocations = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/sublocation`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSubLocations(data || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar sublocações:', error);
+    }
+  };
+
+
+  // Calcular valores totais
+  const calculateTotalValues = () => {
+    // Valor total de negócios fechados (gross value)
+    const closedDeals = dashboard?.dealsByStatus?.find(d => d.status === 4)?.deals || [];
+    const totalFromClosedDeals = closedDeals.reduce((sum, deal) => {
+      const grossValue = deal.grossValue > 0 ? deal.grossValue : deal.value;
+      return sum + grossValue;
+    }, 0);
+
+    // Valor total bruto de sublocações (service value)
+    const totalSubLocationGross = subLocations.reduce((sum, sub) => sum + (sub.serviceValue || 0), 0);
+    
+    // Valor total líquido de sublocações (já descontado)
+    const totalFromSubLocations = subLocations.reduce((sum, sub) => sum + (sub.netValue || 0), 0);
+
+    // Valor total bruto (fechados + sublocação bruta)
+    const valorTotal = totalFromClosedDeals + totalSubLocationGross;
+
+    // Total de descontos da sublocação
+    const totalDiscounts = subLocations.reduce((sum, sub) => sum + (sub.discountValue || 0), 0);
+
+    // Valor líquido (total bruto - descontos da sublocação)
+    const valorLiquido = valorTotal - totalDiscounts;
+
+    return {
+      valorTotal,
+      valorLiquido,
+      totalFromClosedDeals,
+      totalFromSubLocations,
+      totalDiscounts
+    };
+  };
+
   const handleCreateDeal = () => {
     setEditingDeal(null);
     setShowModal(true);
@@ -56,6 +110,31 @@ function Dashboard({ user, onLogout, onNavigate }) {
   const handleEditDeal = (deal) => {
     setEditingDeal(deal);
     setShowModal(true);
+  };
+
+  const handleArchiveDeal = async (id) => {
+    if (window.confirm('Tem certeza que deseja arquivar este negócio?\n\nNegócios arquivados não aparecerão nos relatórios e valores.')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${API_URL}/deals/${id}/archive`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (response.ok) {
+          fetchDashboard();
+        } else {
+          const errorData = await response.json();
+          alert(errorData.message || 'Erro ao arquivar negócio');
+        }
+      } catch (error) {
+        console.error('Erro ao arquivar negócio:', error);
+        alert('Erro ao arquivar negócio');
+      }
+    }
   };
 
   const handleDeleteDeal = async (dealId) => {
@@ -127,112 +206,201 @@ function Dashboard({ user, onLogout, onNavigate }) {
     );
   }
 
+  // Verificar se é aniversário em 2 dias
+  const isBirthdaySoon = (birthday) => {
+    if (!birthday) return false;
+    const today = new Date();
+    const bday = new Date(birthday);
+    bday.setFullYear(today.getFullYear());
+    const diffDays = Math.ceil((bday - today) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 2;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <div>
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
-                Funipro
-              </h1>
-              <p className="text-gray-600 mt-1">Gerencie seus negócios e acompanhe o progresso das vendas</p>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={handleCreateDeal}
-                className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 transform hover:scale-105"
-              >
-                <Plus size={20} />
-                <span>Novo Negócio</span>
-              </button>
-
-              {user.role === 'Admin' && (
-                <button
-                  onClick={() => onNavigate('admin')}
-                  className="text-gray-600 hover:text-gray-800 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <Settings size={20} />
-                </button>
-              )}
-
-              <button
-                onClick={onLogout}
-                className="text-gray-600 hover:text-red-600 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-              >
-                <LogOut size={20} />
-              </button>
-            </div>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header simplificado */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-purple-600">
+              Funil de Vendas
+            </h1>
+            <p className="text-gray-600 mt-1">Gerencie seus negócios e acompanhe o progresso</p>
           </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="bg-blue-100 p-3 rounded-full">
-                <Users className="text-blue-600" size={24} />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Total de Negócios</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard?.totalDeals || 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="bg-green-100 p-3 rounded-full">
-                <TrendingUp className="text-green-600" size={24} />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Negócios Fechados</p>
-                <p className="text-2xl font-bold text-gray-900">{dashboard?.closedDeals || 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="bg-purple-100 p-3 rounded-full">
-                <DollarSign className="text-purple-600" size={24} />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Valor Total</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboard?.totalValue || 0)}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 shadow-sm border hover:shadow-md transition-shadow">
-            <div className="flex items-center">
-              <div className="bg-yellow-100 p-3 rounded-full">
-                <Calendar className="text-yellow-600" size={24} />
-              </div>
-              <div className="ml-4">
-                <p className="text-gray-600 text-sm">Valor Fechado</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboard?.closedValue || 0)}</p>
-              </div>
-            </div>
-          </div>
+          <button
+            onClick={handleCreateDeal}
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 transform hover:scale-105"
+          >
+            <Plus size={20} />
+            <span>Novo Negócio</span>
+          </button>
         </div>
 
         {/* Kanban Board */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
           {Object.entries(statusConfig).map(([status, config]) => {
             const statusData = dashboard?.dealsByStatus?.find(d => d.status.toString() === status);
             const deals = statusData?.deals || [];
+            const isFechadoColumn = parseInt(status) === 4;
             
+            if (isFechadoColumn) {
+              // Para Fechado: dividir em 2 partes (coluna + painel de valores)
+              const values = calculateTotalValues();
+              return (
+                <React.Fragment key={status}>
+                  {/* Coluna Fechado */}
+                  <div
+                    className="bg-white rounded-xl shadow-sm border flex flex-col"
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, parseInt(status))}
+                    style={{ minHeight: '600px' }}
+                  >
+                    <div className={`${config.color} text-white p-4 rounded-t-xl`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold">{config.name}</h3>
+                        <span className="bg-white/20 px-2 py-1 rounded-full text-xs">
+                          {deals.length}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    <div className="p-4 space-y-3 flex-1">
+                      {deals.map((deal) => {
+                        const birthdaySoon = isBirthdaySoon(deal.birthday);
+                        return (
+                        <div
+                          key={deal.id}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, deal)}
+                          className={`bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                            birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
+                          }`}
+                          style={birthdaySoon ? {
+                            boxShadow: '0 0 20px rgba(244, 114, 182, 0.5), 0 0 40px rgba(244, 114, 182, 0.3)'
+                          } : {}}
+                        >
+                        <div className="flex items-start justify-between mb-2">
+                          <h4 className="font-semibold text-gray-900 text-sm">{deal.title}</h4>
+                          <div className="flex space-x-1">
+                            <button
+                              onClick={() => handleEditDeal(deal)}
+                              className="text-gray-400 hover:text-blue-600 p-1"
+                              title="Editar"
+                            >
+                              <Edit size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleArchiveDeal(deal.id)}
+                              className="text-gray-400 hover:text-yellow-600 p-1"
+                              title="Arquivar"
+                            >
+                              <Archive size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteDeal(deal.id)}
+                              className="text-gray-400 hover:text-red-600 p-1"
+                              title="Deletar"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {deal.company && (
+                          <p className="text-gray-600 text-xs mb-1">{deal.company}</p>
+                        )}
+                        
+                        {deal.contactName && (
+                          <p className="text-gray-700 text-sm mb-2">{deal.contactName}</p>
+                        )}
+                        
+                        <div className="flex flex-col space-y-1 mb-3">
+                          {deal.email && (
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Mail size={12} className="mr-1" />
+                              {deal.email}
+                            </div>
+                          )}
+                          {deal.phone && (
+                            <div className="flex items-center text-xs text-gray-600">
+                              <Phone size={12} className="mr-1" />
+                              {deal.phone}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-green-600 text-sm">
+                            {formatCurrency(deal.value)}
+                          </span>
+                          <span className={`px-2 py-1 rounded-full text-xs ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
+                            {priorityConfig[deal.priority]?.name}
+                          </span>
+                        </div>
+                        
+                        {deal.paymentMethod !== null && deal.paymentMethod !== undefined && (
+                          <div className="mt-2">
+                            <span className={`px-2 py-1 rounded-full text-xs ${
+                              deal.paymentMethod === 0 ? 'bg-blue-100 text-blue-600' :
+                              deal.paymentMethod === 1 ? 'bg-green-100 text-green-600' :
+                              'bg-gray-100 text-gray-600'
+                            }`}>
+                              {deal.paymentMethod === 0 ? '💳 Cartão' :
+                               deal.paymentMethod === 1 ? '💸 PIX' :
+                               deal.paymentMethod === 2 ? '📄 Boleto' : '💵 Dinheiro'}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {deal.birthday && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            🎂 {new Date(deal.birthday).toLocaleDateString('pt-BR')}
+                          </div>
+                        )}
+                        
+                        {deal.expectedCloseDate && (
+                          <div className="mt-2 text-xs text-gray-500">
+                            Previsão: {new Date(deal.expectedCloseDate).toLocaleDateString('pt-BR')}
+                          </div>
+                        )}
+                      </div>
+                    );
+                    })}
+                    </div>
+                  </div>
+
+                  {/* Painel de Valores */}
+                  <div className="bg-gray-50 rounded-xl shadow-sm border p-4 flex flex-col" style={{ minHeight: '600px' }}>
+                    <div className="sticky top-4 space-y-4">
+                      {/* Valor Total */}
+                      <div className="bg-white border border-green-200 rounded-lg p-4">
+                        <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase">Valor Total</h4>
+                        <div className="text-2xl font-bold text-green-600">
+                          {formatCurrency(values.valorTotal)}
+                        </div>
+                      </div>
+
+                      {/* Valor Líquido */}
+                      <div className="bg-white border border-blue-200 rounded-lg p-4">
+                        <h4 className="text-xs font-semibold text-gray-600 mb-2 uppercase">Valor Líquido</h4>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {formatCurrency(values.valorLiquido)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            }
+            
+            // Para as outras colunas normais
             return (
               <div
                 key={status}
-                className="bg-white rounded-xl shadow-sm border"
+                className="bg-white rounded-xl shadow-sm border flex flex-col"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, parseInt(status))}
+                style={{ minHeight: '600px' }}
               >
                 <div className={`${config.color} text-white p-4 rounded-t-xl`}>
                   <div className="flex items-center justify-between">
@@ -243,71 +411,108 @@ function Dashboard({ user, onLogout, onNavigate }) {
                   </div>
                 </div>
                 
-                <div className="p-4 space-y-3 min-h-[400px]">
-                  {deals.map((deal) => (
+                <div className="p-4 space-y-3 flex-1">
+                  {deals.map((deal) => {
+                    const birthdaySoon = isBirthdaySoon(deal.birthday);
+                    return (
                     <div
                       key={deal.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, deal)}
-                      className="bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-move"
+                      className={`bg-white border rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                        birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
+                      }`}
+                      style={birthdaySoon ? {
+                        boxShadow: '0 0 20px rgba(244, 114, 182, 0.5), 0 0 40px rgba(244, 114, 182, 0.3)'
+                      } : {}}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <h4 className="font-semibold text-gray-900 text-sm">{deal.title}</h4>
-                        <div className="flex space-x-1">
-                          <button
-                            onClick={() => handleEditDeal(deal)}
-                            className="text-gray-400 hover:text-blue-600 p-1"
-                          >
-                            <Edit size={14} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDeal(deal.id)}
-                            className="text-gray-400 hover:text-red-600 p-1"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold text-gray-900 text-sm">{deal.title}</h4>
+                      <div className="flex space-x-1">
+                        <button
+                          onClick={() => handleEditDeal(deal)}
+                          className="text-gray-400 hover:text-blue-600 p-1"
+                          title="Editar"
+                        >
+                          <Edit size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleArchiveDeal(deal.id)}
+                          className="text-gray-400 hover:text-yellow-600 p-1"
+                          title="Arquivar"
+                        >
+                          <Archive size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteDeal(deal.id)}
+                          className="text-gray-400 hover:text-red-600 p-1"
+                          title="Deletar"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {deal.company && (
+                      <p className="text-gray-600 text-xs mb-1">{deal.company}</p>
+                    )}
+                    
+                    {deal.contactName && (
+                      <p className="text-gray-700 text-sm mb-2">{deal.contactName}</p>
+                    )}
+                    
+                    <div className="flex flex-col space-y-1 mb-3">
+                      {deal.email && (
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Mail size={12} className="mr-1" />
+                          {deal.email}
                         </div>
-                      </div>
-                      
-                      {deal.company && (
-                        <p className="text-gray-600 text-xs mb-1">{deal.company}</p>
                       )}
-                      
-                      {deal.contactName && (
-                        <p className="text-gray-700 text-sm mb-2">{deal.contactName}</p>
-                      )}
-                      
-                      <div className="flex flex-col space-y-1 mb-3">
-                        {deal.email && (
-                          <div className="flex items-center text-xs text-gray-600">
-                            <Mail size={12} className="mr-1" />
-                            {deal.email}
-                          </div>
-                        )}
-                        {deal.phone && (
-                          <div className="flex items-center text-xs text-gray-600">
-                            <Phone size={12} className="mr-1" />
-                            {deal.phone}
-                          </div>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-green-600 text-sm">
-                          {formatCurrency(deal.value)}
-                        </span>
-                        <span className={`px-2 py-1 rounded-full text-xs ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
-                          {priorityConfig[deal.priority]?.name}
-                        </span>
-                      </div>
-                      
-                      {deal.expectedCloseDate && (
-                        <div className="mt-2 text-xs text-gray-500">
-                          Previsão: {new Date(deal.expectedCloseDate).toLocaleDateString('pt-BR')}
+                      {deal.phone && (
+                        <div className="flex items-center text-xs text-gray-600">
+                          <Phone size={12} className="mr-1" />
+                          {deal.phone}
                         </div>
                       )}
                     </div>
-                  ))}
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-green-600 text-sm">
+                        {formatCurrency(deal.value)}
+                      </span>
+                      <span className={`px-2 py-1 rounded-full text-xs ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
+                        {priorityConfig[deal.priority]?.name}
+                      </span>
+                    </div>
+                    
+                    {deal.paymentMethod !== null && deal.paymentMethod !== undefined && (
+                      <div className="mt-2">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          deal.paymentMethod === 0 ? 'bg-blue-100 text-blue-600' :
+                          deal.paymentMethod === 1 ? 'bg-green-100 text-green-600' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {deal.paymentMethod === 0 ? '💳 Cartão' :
+                           deal.paymentMethod === 1 ? '💸 PIX' :
+                           deal.paymentMethod === 2 ? '📄 Boleto' : '💵 Dinheiro'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {deal.birthday && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        🎂 {new Date(deal.birthday).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                    
+                    {deal.expectedCloseDate && (
+                      <div className="mt-2 text-xs text-gray-500">
+                        Previsão: {new Date(deal.expectedCloseDate).toLocaleDateString('pt-BR')}
+                      </div>
+                    )}
+                  </div>
+                );
+                })}
                 </div>
               </div>
             );
@@ -324,20 +529,6 @@ function Dashboard({ user, onLogout, onNavigate }) {
         />
       )}
 
-      {/* Footer */}
-      <footer className="bg-white border-t mt-16">
-        <div className="max-w-7xl mx-auto px-4 py-8 text-center">
-          <p className="text-gray-600 mb-2">Desenvolvido por</p>
-          <a 
-            href="https://sysmath.com.br" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-block text-blue-600 font-semibold hover:scale-110 transform transition-all duration-300 hover:text-purple-600"
-          >
-            Sysmath.com.br
-          </a>
-        </div>
-      </footer>
     </div>
   );
 }
@@ -353,7 +544,10 @@ function DealModalComponent({ deal, onClose, onSave }) {
     value: 0,
     status: 0,
     priority: 1,
+    paymentMethod: null,
     expectedCloseDate: '',
+    paymentDate: '',
+    birthday: '',
     notes: ''
   });
   const [loading, setLoading] = useState(false);
@@ -370,9 +564,30 @@ function DealModalComponent({ deal, onClose, onSave }) {
         value: deal.value || 0,
         status: deal.status || 0,
         priority: deal.priority || 1,
+        paymentMethod: deal.paymentMethod !== null && deal.paymentMethod !== undefined ? deal.paymentMethod : null,
         expectedCloseDate: deal.expectedCloseDate ? 
           new Date(deal.expectedCloseDate).toISOString().split('T')[0] : '',
+        paymentDate: deal.paymentDate ? 
+          new Date(deal.paymentDate).toISOString().split('T')[0] : '',
+        birthday: deal.birthday ? 
+          new Date(deal.birthday).toISOString().split('T')[0] : '',
         notes: deal.notes || ''
+      });
+    } else {
+      setFormData({
+        title: '',
+        company: '',
+        contactName: '',
+        email: '',
+        phone: '',
+        value: 0,
+        status: 0,
+        priority: 1,
+        paymentMethod: null,
+        expectedCloseDate: '',
+        paymentDate: '',
+        birthday: '',
+        notes: ''
       });
     }
   }, [deal]);
@@ -397,7 +612,10 @@ function DealModalComponent({ deal, onClose, onSave }) {
       const submitData = {
         ...formData,
         value: parseFloat(formData.value) || 0,
-        expectedCloseDate: formData.expectedCloseDate || null
+        expectedCloseDate: formData.expectedCloseDate || null,
+        paymentDate: formData.paymentDate || null,
+        birthday: formData.birthday || null,
+        paymentMethod: formData.paymentMethod !== null && formData.paymentMethod !== '' ? parseInt(formData.paymentMethod) : null
       };
 
       const response = await fetch(url, {
@@ -410,14 +628,41 @@ function DealModalComponent({ deal, onClose, onSave }) {
       });
 
       if (response.ok) {
-        onSave();
+        const savedData = await response.json();
+        console.log('Negócio salvo com sucesso:', savedData);
         onClose();
+        // Recarregar dashboard imediatamente
+        onSave();
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao salvar negócio');
+        let errorMessage = 'Erro ao salvar negócio';
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch (parseError) {
+            errorMessage = 'Erro ao processar resposta do servidor';
+          }
+        } else {
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              try {
+                const errorObj = JSON.parse(errorText);
+                errorMessage = errorObj.message || errorObj.error || errorMessage;
+              } catch {
+                errorMessage = errorText.substring(0, 200) || errorMessage;
+              }
+            }
+          } catch (textError) {
+            errorMessage = `Erro ${response.status}: ${response.statusText}`;
+          }
+        }
+        throw new Error(errorMessage);
       }
     } catch (error) {
-      setError(error.message);
+      console.error('Erro ao salvar negócio:', error);
+      setError(error.message || 'Erro desconhecido ao salvar negócio');
     } finally {
       setLoading(false);
     }
@@ -538,6 +783,51 @@ function DealModalComponent({ deal, onClose, onSave }) {
                 step="0.01"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0,00"
+              />
+            </div>
+
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Método de Pagamento
+              </label>
+              <select
+                name="paymentMethod"
+                value={formData.paymentMethod !== null && formData.paymentMethod !== undefined ? formData.paymentMethod : ''}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">Selecione...</option>
+                <option value={0}>💳 Cartão</option>
+                <option value={1}>💸 PIX</option>
+                <option value={2}>📄 Boleto</option>
+                <option value={3}>💵 Dinheiro</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data de Aniversário
+              </label>
+              <input
+                type="date"
+                name="birthday"
+                value={formData.birthday}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Data de Pagamento
+              </label>
+              <input
+                type="date"
+                name="paymentDate"
+                value={formData.paymentDate}
+                onChange={handleChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 

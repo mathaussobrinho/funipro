@@ -8,6 +8,8 @@ namespace FuniproApi.Models
     {
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public ICollection<Deal> Deals { get; set; } = new List<Deal>();
+        public ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
+        public ICollection<SubLocation> SubLocations { get; set; } = new List<SubLocation>();
     }
 
     public class Deal
@@ -29,15 +31,30 @@ namespace FuniproApi.Models
         [Column(TypeName = "decimal(18,2)")]
         public decimal Value { get; set; }
         
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal GrossValue { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal NetValue { get; set; }
+        
         [Required]
         public DealStatus Status { get; set; } = DealStatus.Lead;
         
         public DealPriority Priority { get; set; } = DealPriority.Media;
         
+        public PaymentMethod? PaymentMethod { get; set; }
+        
         public DateTime? ExpectedCloseDate { get; set; }
         
-        // NOVO CAMPO ADICIONADO
+        public DateTime? PaymentDate { get; set; }
+        
+        public DateTime? Birthday { get; set; }
+        
         public string? Notes { get; set; }
+        
+        public bool IsArchived { get; set; } = false;
+        
+        public DateTime? ArchivedAt { get; set; }
         
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         
@@ -63,6 +80,14 @@ namespace FuniproApi.Models
         Baixa = 0,
         Media = 1,
         Alta = 2
+    }
+
+    public enum PaymentMethod
+    {
+        Cartao = 0,
+        Pix = 1,
+        Boleto = 2,
+        Dinheiro = 3
     }
 
     // DTOs
@@ -96,10 +121,17 @@ namespace FuniproApi.Models
         public string? Email { get; set; }
         public string? Phone { get; set; }
         public decimal Value { get; set; }
+        public decimal GrossValue { get; set; }
+        public decimal NetValue { get; set; }
         public DealStatus Status { get; set; }
         public DealPriority Priority { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
         public DateTime? ExpectedCloseDate { get; set; }
-        public string? Notes { get; set; } // NOVO CAMPO
+        public DateTime? PaymentDate { get; set; }
+        public DateTime? Birthday { get; set; }
+        public string? Notes { get; set; }
+        public bool IsArchived { get; set; }
+        public DateTime? ArchivedAt { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -117,10 +149,15 @@ namespace FuniproApi.Models
         
         public string? Phone { get; set; }
         public decimal Value { get; set; }
+        public decimal? GrossValue { get; set; }
+        public decimal? NetValue { get; set; }
         public DealStatus Status { get; set; } = DealStatus.Lead;
         public DealPriority Priority { get; set; } = DealPriority.Media;
+        public PaymentMethod? PaymentMethod { get; set; }
         public DateTime? ExpectedCloseDate { get; set; }
-        public string? Notes { get; set; } // NOVO CAMPO
+        public DateTime? PaymentDate { get; set; }
+        public DateTime? Birthday { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class UpdateDealDto
@@ -134,10 +171,15 @@ namespace FuniproApi.Models
         
         public string? Phone { get; set; }
         public decimal? Value { get; set; }
+        public decimal? GrossValue { get; set; }
+        public decimal? NetValue { get; set; }
         public DealStatus? Status { get; set; }
         public DealPriority? Priority { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
         public DateTime? ExpectedCloseDate { get; set; }
-        public string? Notes { get; set; } // NOVO CAMPO
+        public DateTime? PaymentDate { get; set; }
+        public DateTime? Birthday { get; set; }
+        public string? Notes { get; set; }
     }
 
     public class DashboardDto
@@ -146,7 +188,12 @@ namespace FuniproApi.Models
         public int ClosedDeals { get; set; }
         public decimal TotalValue { get; set; }
         public decimal ClosedValue { get; set; }
+        public decimal TotalGrossValue { get; set; }
+        public decimal TotalNetValue { get; set; }
+        public decimal ClosedGrossValue { get; set; }
+        public decimal ClosedNetValue { get; set; }
         public List<DealsByStatusDto> DealsByStatus { get; set; } = new();
+        public List<MonthlyRevenueDto> MonthlyRevenues { get; set; } = new();
     }
 
     public class DealsByStatusDto
@@ -175,5 +222,147 @@ namespace FuniproApi.Models
     {
         [Required]
         public DealStatus Status { get; set; }
+    }
+
+    // Modelo de Estoque
+    public class Inventory
+    {
+        public int Id { get; set; }
+        
+        [Required]
+        public string Name { get; set; }
+        
+        public string? Description { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Quantity { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal MinQuantity { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal UnitPrice { get; set; }
+        
+        public string? Category { get; set; }
+        
+        public string? Supplier { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        [Required]
+        public string UserId { get; set; }
+        
+        public ApplicationUser User { get; set; }
+    }
+
+    // Modelo de Sublocação
+    public class SubLocation
+    {
+        public int Id { get; set; }
+        
+        [Required]
+        public string Title { get; set; }
+        
+        public string? Description { get; set; }
+        
+        public string? ThirdPartyName { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal ServiceValue { get; set; }
+        
+        [Column(TypeName = "decimal(5,2)")]
+        public decimal DiscountPercentage { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal DiscountValue { get; set; }
+        
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal NetValue { get; set; }
+        
+        public string? ServiceType { get; set; }
+        
+        public DateTime ServiceDate { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+        
+        [Required]
+        public string UserId { get; set; }
+        
+        public ApplicationUser User { get; set; }
+    }
+
+    // DTOs para Estoque
+    public class InventoryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal MinQuantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string? Category { get; set; }
+        public string? Supplier { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class CreateInventoryDto
+    {
+        [Required]
+        public string Name { get; set; }
+        
+        public string? Description { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal MinQuantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public string? Category { get; set; }
+        public string? Supplier { get; set; }
+    }
+
+    // DTOs para Sublocação
+    public class SubLocationDto
+    {
+        public int Id { get; set; }
+        public string Title { get; set; }
+        public string? Description { get; set; }
+        public string? ThirdPartyName { get; set; }
+        public decimal ServiceValue { get; set; }
+        public decimal DiscountPercentage { get; set; }
+        public decimal DiscountValue { get; set; }
+        public decimal NetValue { get; set; }
+        public string? ServiceType { get; set; }
+        public DateTime ServiceDate { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    public class CreateSubLocationDto
+    {
+        [Required]
+        public string Title { get; set; }
+        
+        public string? Description { get; set; }
+        public string? ThirdPartyName { get; set; }
+        public decimal ServiceValue { get; set; }
+        public decimal DiscountPercentage { get; set; }
+        public string? ServiceType { get; set; }
+        public DateTime ServiceDate { get; set; }
+    }
+
+    // DTO para Relatórios
+    public class MonthlyRevenueDto
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public string MonthName { get; set; }
+        public decimal GrossValue { get; set; }
+        public decimal NetValue { get; set; }
+        public decimal TotalDiscounts { get; set; }
+        public int TotalDeals { get; set; }
+        public Dictionary<string, decimal> RevenueByPaymentMethod { get; set; } = new();
     }
 }

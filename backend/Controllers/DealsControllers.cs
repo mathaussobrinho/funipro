@@ -20,7 +20,20 @@ namespace FuniproApi.Controllers
 
         private string GetUserId()
         {
-            return User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                Console.WriteLine("AVISO: ClaimTypes.NameIdentifier não encontrado no token. Claims disponíveis:");
+                foreach (var claim in User.Claims)
+                {
+                    Console.WriteLine($"  - {claim.Type}: {claim.Value}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($"UserId extraído do token: {userId}");
+            }
+            return userId;
         }
 
         [HttpGet("dashboard")]
@@ -58,13 +71,32 @@ namespace FuniproApi.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(new { message = "Dados inválidos", errors = ModelState });
             }
 
             var userId = GetUserId();
-            var deal = await _dealService.CreateDealAsync(createDealDto, userId);
-            
-            return CreatedAtAction(nameof(GetDeal), new { id = deal.Id }, deal);
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized(new { message = "Usuário não autenticado ou token inválido" });
+            }
+
+            try
+            {
+                var deal = await _dealService.CreateDealAsync(createDealDto, userId);
+                return CreatedAtAction(nameof(GetDeal), new { id = deal.Id }, deal);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao criar negócio", error = ex.Message, stackTrace = ex.StackTrace });
+            }
         }
 
         [HttpPut("{id}")]
@@ -117,6 +149,52 @@ namespace FuniproApi.Controllers
             }
 
             return Ok(new { message = "Negócio deletado com sucesso" });
+        }
+
+        [HttpGet("archived")]
+        public async Task<IActionResult> GetArchivedDeals()
+        {
+            var userId = GetUserId();
+            var deals = await _dealService.GetArchivedDealsAsync(userId);
+            return Ok(deals);
+        }
+
+        [HttpPost("{id}/archive")]
+        public async Task<IActionResult> ArchiveDeal(int id)
+        {
+            var userId = GetUserId();
+            try
+            {
+                var deal = await _dealService.ArchiveDealAsync(id, userId);
+                return Ok(deal);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao arquivar negócio", error = ex.Message });
+            }
+        }
+
+        [HttpPost("{id}/unarchive")]
+        public async Task<IActionResult> UnarchiveDeal(int id)
+        {
+            var userId = GetUserId();
+            try
+            {
+                var deal = await _dealService.UnarchiveDealAsync(id, userId);
+                return Ok(deal);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Erro ao desarquivar negócio", error = ex.Message });
+            }
         }
     }
 }

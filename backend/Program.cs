@@ -7,6 +7,13 @@ using FuniproApi.Data;
 using FuniproApi.Models;
 using FuniproApi.Services;
 
+// FORÇAR AMBIENTE DEVELOPMENT SE NÃO ESTIVER EM PRODUÇÃO NO SERVIDOR
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
+if (string.IsNullOrEmpty(environment) || (!environment.Equals("Production", StringComparison.OrdinalIgnoreCase) && !environment.Equals("Staging", StringComparison.OrdinalIgnoreCase)))
+{
+    Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -14,9 +21,48 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+// Database - SEMPRE USA SQLITE LOCALMENTE (Data Source=)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine($"Ambiente: {builder.Environment.EnvironmentName}");
+Console.WriteLine($"Connection String: {connectionString}");
+
+// FORÇA SQLite se a connection string começar com "Data Source=" OU se estiver em Development
+if (builder.Environment.IsDevelopment())
+{
+    // Em Development, SEMPRE usa SQLite
+    connectionString = "Data Source=funipro.db;Foreign Keys=True";
+    Console.WriteLine("FORÇANDO SQLite para desenvolvimento local!");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        options.UseSqlite(connectionString, sqliteOptions =>
+        {
+            sqliteOptions.CommandTimeout(30);
+        });
+    });
+}
+else if (connectionString?.StartsWith("Data Source=") == true)
+{
+    // Produção pode usar SQLite se a connection string for SQLite
+    Console.WriteLine("Usando SQLite como banco de dados");
+    if (!connectionString.Contains("Foreign Keys"))
+    {
+        connectionString += ";Foreign Keys=True";
+    }
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    {
+        options.UseSqlite(connectionString, sqliteOptions =>
+        {
+            sqliteOptions.CommandTimeout(30);
+        });
+    });
+}
+else
+{
+    // Produção usando SQL Server
+    Console.WriteLine("Usando SQL Server como banco de dados");
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseSqlServer(connectionString));
+}
 
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -84,7 +130,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// HTTPS redirection apenas em produção
+if (app.Environment.IsProduction())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
