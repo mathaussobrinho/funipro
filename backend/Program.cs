@@ -117,6 +117,20 @@ if (app.Environment.IsProduction())
 app.UseCors("AllowReactApp");
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Rota na raiz para verificar se a API está funcionando
+app.MapGet("/", () => new { 
+    message = "FuniPro API está funcionando!", 
+    version = "1.0",
+    endpoints = new[] {
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/deals",
+        "/api/inventory",
+        "/api/sublocation"
+    }
+});
+
 app.MapControllers();
 
 // Initialize database
