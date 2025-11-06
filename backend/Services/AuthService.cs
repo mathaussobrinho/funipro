@@ -292,6 +292,25 @@ namespace FuniproApi.Services
             
             Console.WriteLine($"Criando Deal para usuário: {user.Email} (ID: {userId})");
 
+            // Converter datas para UTC (PostgreSQL requer UTC)
+            DateTime? expectedCloseDateUtc = createDealDto.ExpectedCloseDate.HasValue 
+                ? (createDealDto.ExpectedCloseDate.Value.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(createDealDto.ExpectedCloseDate.Value, DateTimeKind.Utc) 
+                    : createDealDto.ExpectedCloseDate.Value.ToUniversalTime())
+                : null;
+            
+            DateTime? paymentDateUtc = createDealDto.PaymentDate.HasValue 
+                ? (createDealDto.PaymentDate.Value.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(createDealDto.PaymentDate.Value, DateTimeKind.Utc) 
+                    : createDealDto.PaymentDate.Value.ToUniversalTime())
+                : null;
+            
+            DateTime? birthdayUtc = createDealDto.Birthday.HasValue 
+                ? (createDealDto.Birthday.Value.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(createDealDto.Birthday.Value, DateTimeKind.Utc) 
+                    : createDealDto.Birthday.Value.ToUniversalTime())
+                : null;
+
             var deal = new Deal
             {
                 Title = createDealDto.Title,
@@ -307,9 +326,9 @@ namespace FuniproApi.Services
                 Status = createDealDto.Status,
                 Priority = createDealDto.Priority,
                 PaymentMethod = createDealDto.PaymentMethod,
-                ExpectedCloseDate = createDealDto.ExpectedCloseDate,
-                PaymentDate = createDealDto.PaymentDate,
-                Birthday = createDealDto.Birthday,
+                ExpectedCloseDate = expectedCloseDateUtc,
+                PaymentDate = paymentDateUtc,
+                Birthday = birthdayUtc,
                 Notes = createDealDto.Notes,
                 UserId = userId
             };
