@@ -11,35 +11,53 @@ function ReportsPage({ user, onLogout, onNavigate }) {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+  }, [user]);
 
   const fetchAllData = async () => {
     setLoading(true);
     const token = localStorage.getItem('token');
     
+    // Verificar módulos do usuário
+    const userModules = user?.modules || [];
+    const userModuleKeys = userModules.map(m => m.key);
+    const isAdmin = user?.role === 'Admin';
+    
     try {
-      // Buscar dashboard
-      const dashboardRes = await fetch(`${API_URL}/deals/dashboard`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (dashboardRes.ok) {
-        setDashboard(await dashboardRes.json());
+      // Buscar dashboard (sempre disponível se tiver acesso a reports)
+      const hasReportsAccess = isAdmin || userModuleKeys.length === 0 || userModuleKeys.includes('reports');
+      if (hasReportsAccess) {
+        const dashboardRes = await fetch(`${API_URL}/deals/dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (dashboardRes.ok) {
+          setDashboard(await dashboardRes.json());
+        }
       }
 
-      // Buscar sublocações
-      const subLocRes = await fetch(`${API_URL}/sublocation`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (subLocRes.ok) {
-        setSubLocations(await subLocRes.json() || []);
+      // Buscar sublocações apenas se tiver acesso ao módulo
+      const hasSublocationAccess = isAdmin || userModuleKeys.length === 0 || userModuleKeys.includes('sublocation');
+      if (hasSublocationAccess) {
+        const subLocRes = await fetch(`${API_URL}/sublocation`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (subLocRes.ok) {
+          setSubLocations(await subLocRes.json() || []);
+        }
+      } else {
+        setSubLocations([]);
       }
 
-      // Buscar inventário
-      const invRes = await fetch(`${API_URL}/inventory`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (invRes.ok) {
-        setInventories(await invRes.json() || []);
+      // Buscar inventário apenas se tiver acesso ao módulo
+      const hasInventoryAccess = isAdmin || userModuleKeys.length === 0 || userModuleKeys.includes('inventory');
+      if (hasInventoryAccess) {
+        const invRes = await fetch(`${API_URL}/inventory`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (invRes.ok) {
+          setInventories(await invRes.json() || []);
+        }
+      } else {
+        setInventories([]);
       }
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
@@ -57,6 +75,13 @@ function ReportsPage({ user, onLogout, onNavigate }) {
 
   // Calcular dados para gráficos
   const getChartData = () => {
+    // Verificar módulos do usuário
+    const userModules = user?.modules || [];
+    const userModuleKeys = userModules.map(m => m.key);
+    const isAdmin = user?.role === 'Admin';
+    const hasSublocationAccess = isAdmin || userModuleKeys.length === 0 || userModuleKeys.includes('sublocation');
+    const hasInventoryAccess = isAdmin || userModuleKeys.length === 0 || userModuleKeys.includes('inventory');
+    
     // Dados mensais de receita
     const monthlyData = dashboard?.monthlyRevenues?.map(m => ({
       month: m.monthName,
@@ -97,18 +122,30 @@ function ReportsPage({ user, onLogout, onNavigate }) {
       const grossValue = deal.grossValue > 0 ? deal.grossValue : deal.value || 0;
       return sum + grossValue;
     }, 0);
-    const totalFromSubLocation = subLocations.reduce((sum, sub) => sum + (sub.netValue || 0), 0);
+    
+    // Incluir sublocação apenas se tiver acesso
+    const totalFromSubLocation = hasSublocationAccess 
+      ? subLocations.reduce((sum, sub) => sum + (sub.netValue || 0), 0)
+      : 0;
+    
     const originData = [
-      { name: 'Negócios Fechados', value: totalFromClosed, porcentagem: 0 },
-      { name: 'Sublocação', value: totalFromSubLocation, porcentagem: 0 }
+      { name: 'Negócios Fechados', value: totalFromClosed, porcentagem: 0 }
     ];
+    
+    // Adicionar sublocação apenas se tiver acesso e houver valor
+    if (hasSublocationAccess && totalFromSubLocation > 0) {
+      originData.push({ name: 'Sublocação', value: totalFromSubLocation, porcentagem: 0 });
+    }
+    
     const totalOrigin = originData.reduce((sum, item) => sum + item.value, 0);
     originData.forEach(item => {
       item.porcentagem = totalOrigin > 0 ? (item.value / totalOrigin) * 100 : 0;
     });
 
-    // Gastos previstos (estoque)
-    const totalInventoryCost = inventories.reduce((sum, inv) => sum + (inv.quantity * inv.unitPrice), 0);
+    // Gastos previstos (estoque) - apenas se tiver acesso
+    const totalInventoryCost = hasInventoryAccess 
+      ? inventories.reduce((sum, inv) => sum + (inv.quantity * inv.unitPrice), 0)
+      : 0;
     
     // Dinheiro a entrar (Total Fechado + Sublocação)
     const moneyToEnter = totalFromClosed + totalFromSubLocation;
@@ -121,7 +158,9 @@ function ReportsPage({ user, onLogout, onNavigate }) {
       totalInventoryCost,
       moneyToEnter,
       totalFromClosed,
-      totalFromSubLocation
+      totalFromSubLocation,
+      hasSublocationAccess,
+      hasInventoryAccess
     };
   };
 
@@ -163,19 +202,21 @@ function ReportsPage({ user, onLogout, onNavigate }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Sublocação</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
-                  {formatCurrency(chartData.totalFromSubLocation)}
-                </p>
-              </div>
-              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-                <Package className="text-blue-600 dark:text-blue-400" size={24} />
+          {chartData.hasSublocationAccess && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Sublocação</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 mt-1">
+                    {formatCurrency(chartData.totalFromSubLocation)}
+                  </p>
+                </div>
+                <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
+                  <Package className="text-blue-600 dark:text-blue-400" size={24} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
             <div className="flex items-center justify-between">
@@ -191,19 +232,21 @@ function ReportsPage({ user, onLogout, onNavigate }) {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 dark:text-gray-400 text-sm">Gastos Previstos</p>
-                <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
-                  {formatCurrency(chartData.totalInventoryCost)}
-                </p>
-              </div>
-              <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full">
-                <ArrowDownCircle className="text-red-600 dark:text-red-400" size={24} />
+          {chartData.hasInventoryAccess && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">Gastos Previstos</p>
+                  <p className="text-2xl font-bold text-red-600 dark:text-red-400 mt-1">
+                    {formatCurrency(chartData.totalInventoryCost)}
+                  </p>
+                </div>
+                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full">
+                  <ArrowDownCircle className="text-red-600 dark:text-red-400" size={24} />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Gráficos */}
@@ -228,10 +271,11 @@ function ReportsPage({ user, onLogout, onNavigate }) {
             )}
           </div>
 
-          {/* Origem do Dinheiro */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Origem do Dinheiro</h3>
-            {chartData.originData.length > 0 && chartData.originData.some(d => d.value > 0) ? (
+          {/* Origem do Dinheiro - apenas se tiver acesso a sublocação ou houver negócios fechados */}
+          {(chartData.hasSublocationAccess || chartData.totalFromClosed > 0) && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Origem do Dinheiro</h3>
+              {chartData.originData.length > 0 && chartData.originData.some(d => d.value > 0) ? (
               <ResponsiveContainer width="100%" height={300}>
                 <PieChart>
                   <Pie
@@ -252,10 +296,11 @@ function ReportsPage({ user, onLogout, onNavigate }) {
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
-            )}
-          </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400 text-center py-8">Nenhum dado disponível</p>
+              )}
+            </div>
+          )}
 
           {/* Receita por Método de Pagamento */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border dark:border-gray-700 p-6">

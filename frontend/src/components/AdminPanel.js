@@ -225,11 +225,43 @@ function CreateUserModal({ onClose, onSuccess }) {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    role: 'User'
+    role: 'User',
+    moduleIds: []
   });
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    fetchModules();
+  }, []);
+
+  const fetchModules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/module`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setModules(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar módulos:', error);
+    }
+  };
+
+  const toggleModule = (moduleId) => {
+    setFormData(prev => ({
+      ...prev,
+      moduleIds: prev.moduleIds.includes(moduleId)
+        ? prev.moduleIds.filter(id => id !== moduleId)
+        : [...prev.moduleIds, moduleId]
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!formData.email || !formData.password) {
@@ -253,7 +285,12 @@ function CreateUserModal({ onClose, onSuccess }) {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          role: formData.role,
+          moduleIds: formData.moduleIds
+        }),
       });
 
       if (response.ok) {
@@ -341,6 +378,33 @@ function CreateUserModal({ onClose, onSuccess }) {
                 <option value="Admin">Administrador</option>
               </select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Módulos Permitidos
+              </label>
+              <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
+                {modules.map((module) => (
+                  <label key={module.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
+                    <input
+                      type="checkbox"
+                      checked={formData.moduleIds.includes(module.id)}
+                      onChange={() => toggleModule(module.id)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{module.name}</span>
+                      {module.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{module.description}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+                {modules.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">Carregando módulos...</p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -371,9 +435,89 @@ function CreateUserModal({ onClose, onSuccess }) {
 
 function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
   const [newPassword, setNewPassword] = useState('');
+  const [selectedModuleIds, setSelectedModuleIds] = useState([]);
+  const [modules, setModules] = useState([]);
+  const [userModules, setUserModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('password'); // 'password' ou 'modules'
+
+  useEffect(() => {
+    fetchModules();
+    fetchUserModules();
+  }, []);
+
+  const fetchModules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/module`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setModules(data);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar módulos:', error);
+    }
+  };
+
+  const fetchUserModules = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/module/user/${selectedUser.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUserModules(data);
+        setSelectedModuleIds(data.map(m => m.id));
+      }
+    } catch (error) {
+      console.error('Erro ao carregar módulos do usuário:', error);
+    }
+  };
+
+  const toggleModule = (moduleId) => {
+    setSelectedModuleIds(prev =>
+      prev.includes(moduleId)
+        ? prev.filter(id => id !== moduleId)
+        : [...prev, moduleId]
+    );
+  };
+
+  const handleUpdateModules = async () => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_URL}/module/user/${selectedUser.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ moduleIds: selectedModuleIds }),
+      });
+
+      if (response.ok) {
+        onSuccess();
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erro ao atualizar módulos');
+      }
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!newPassword.trim()) {
@@ -415,9 +559,9 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl">
         <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Alterar Senha</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Editar Usuário</h2>
           <button
             onClick={onClose}
             className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1"
@@ -427,7 +571,7 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
         </div>
 
         <div className="p-6">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Alterando senha para: <strong className="dark:text-white">{selectedUser.email}</strong></p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">Editando: <strong className="dark:text-white">{selectedUser.email}</strong></p>
           
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-3 rounded-lg mb-4">
@@ -435,29 +579,85 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
             </div>
           )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Nova Senha *
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                required
-                minLength="6"
-                className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
-              >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
-            </div>
+          {/* Tabs */}
+          <div className="flex space-x-2 mb-4 border-b dark:border-gray-700">
+            <button
+              onClick={() => setActiveTab('password')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'password'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Alterar Senha
+            </button>
+            <button
+              onClick={() => setActiveTab('modules')}
+              className={`px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === 'modules'
+                  ? 'text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-400'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+              }`}
+            >
+              Módulos
+            </button>
           </div>
+
+          {/* Conteúdo da Tab */}
+          {activeTab === 'password' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Nova Senha *
+              </label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength="6"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'modules' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Módulos Permitidos
+              </label>
+              <div className="space-y-2 max-h-64 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-700">
+                {modules.map((module) => (
+                  <label key={module.id} className="flex items-center space-x-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded">
+                    <input
+                      type="checkbox"
+                      checked={selectedModuleIds.includes(module.id)}
+                      onChange={() => toggleModule(module.id)}
+                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{module.name}</span>
+                      {module.description && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{module.description}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+                {modules.length === 0 && (
+                  <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">Carregando módulos...</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-end space-x-3 p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
@@ -467,18 +667,33 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
           >
             Cancelar
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={loading || !newPassword.trim()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
-          >
-            {loading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
-            ) : (
-              <Edit size={16} />
-            )}
-            <span>{loading ? 'Alterando...' : 'Alterar'}</span>
-          </button>
+          {activeTab === 'password' ? (
+            <button
+              onClick={handleSubmit}
+              disabled={loading || !newPassword.trim()}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+              ) : (
+                <Edit size={16} />
+              )}
+              <span>{loading ? 'Alterando...' : 'Alterar Senha'}</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleUpdateModules}
+              disabled={loading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:opacity-50"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+              ) : (
+                <Edit size={16} />
+              )}
+              <span>{loading ? 'Salvando...' : 'Salvar Módulos'}</span>
+            </button>
+          )}
         </div>
       </div>
     </div>

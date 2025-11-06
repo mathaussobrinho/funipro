@@ -223,6 +223,51 @@ namespace FuniproApi.Data
                 {
                     Console.WriteLine($"Usuário admin já existe: {adminEmail}");
                 }
+
+                // Criar módulos padrão se não existirem
+                var modules = new[]
+                {
+                    new Module { Name = "Funil de Vendas", Description = "Gerenciamento de negócios e vendas", Key = "funnel", IsActive = true },
+                    new Module { Name = "Estoque", Description = "Controle de inventário", Key = "inventory", IsActive = true },
+                    new Module { Name = "Relatórios", Description = "Relatórios e análises", Key = "reports", IsActive = true },
+                    new Module { Name = "Sublocação", Description = "Gestão de sublocação", Key = "sublocation", IsActive = true },
+                    new Module { Name = "Arquivados", Description = "Negócios arquivados", Key = "archived", IsActive = true }
+                };
+
+                foreach (var module in modules)
+                {
+                    var existingModule = await context.Modules.FirstOrDefaultAsync(m => m.Key == module.Key);
+                    if (existingModule == null)
+                    {
+                        context.Modules.Add(module);
+                        Console.WriteLine($"Módulo '{module.Name}' criado.");
+                    }
+                }
+
+                await context.SaveChangesAsync();
+
+                // Se for o admin, dar acesso a todos os módulos
+                if (adminUser != null)
+                {
+                    var adminModules = await context.UserModules
+                        .Where(um => um.UserId == adminUser.Id)
+                        .ToListAsync();
+
+                    if (!adminModules.Any())
+                    {
+                        var allModules = await context.Modules.Where(m => m.IsActive).ToListAsync();
+                        foreach (var module in allModules)
+                        {
+                            context.UserModules.Add(new UserModule
+                            {
+                                UserId = adminUser.Id,
+                                ModuleId = module.Id
+                            });
+                        }
+                        await context.SaveChangesAsync();
+                        Console.WriteLine("Todos os módulos atribuídos ao admin.");
+                    }
+                }
             }
             catch (Exception ex)
             {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Package, BarChart3, Building2, Archive, LogOut, Settings, Moon, Sun } from 'lucide-react';
+import { TrendingUp, Package, BarChart3, Building2, Archive, LogOut, Settings, Moon, Sun, HelpCircle, Mail } from 'lucide-react';
 
 function Sidebar({ currentPage, onNavigate, user, onLogout }) {
   const [darkMode, setDarkMode] = useState(false);
@@ -25,13 +25,29 @@ function Sidebar({ currentPage, onNavigate, user, onLogout }) {
       document.documentElement.classList.remove('dark');
     }
   };
-  const menuItems = [
-    { id: 'funnel', label: 'Funil de Vendas', icon: TrendingUp },
-    { id: 'inventory', label: 'Estoque', icon: Package },
-    { id: 'reports', label: 'Relatórios', icon: BarChart3 },
-    { id: 'sublocation', label: 'Sublocação', icon: Building2 },
-    { id: 'archived', label: 'Arquivados', icon: Archive },
+  // Mapeamento de módulos disponíveis
+  const allModules = [
+    { id: 'funnel', label: 'Funil de Vendas', icon: TrendingUp, key: 'funnel' },
+    { id: 'inventory', label: 'Estoque', icon: Package, key: 'inventory' },
+    { id: 'reports', label: 'Relatórios', icon: BarChart3, key: 'reports' },
+    { id: 'sublocation', label: 'Sublocação', icon: Building2, key: 'sublocation' },
+    { id: 'archived', label: 'Arquivados', icon: Archive, key: 'archived' },
   ];
+
+  // Filtrar módulos baseado nos módulos permitidos do usuário
+  // Se o usuário for Admin ou não tiver módulos definidos, mostrar todos
+  const userModules = user?.modules || [];
+  const userModuleKeys = userModules.map(m => m.key);
+  const isAdmin = user?.role === 'Admin';
+  
+  const menuItems = allModules.filter(item => {
+    // Admin sempre vê todos os módulos
+    if (isAdmin) return true;
+    // Se não há módulos definidos, mostrar todos (compatibilidade)
+    if (userModuleKeys.length === 0) return true;
+    // Caso contrário, mostrar apenas módulos permitidos
+    return userModuleKeys.includes(item.key);
+  });
 
   return (
     <div className="w-64 bg-white dark:bg-gray-800 border-r dark:border-gray-700 min-h-screen fixed left-0 top-0 shadow-sm">
@@ -55,6 +71,7 @@ function Sidebar({ currentPage, onNavigate, user, onLogout }) {
       </div>
       
       <nav className="p-4">
+        <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 px-2">Módulos</p>
         <ul className="space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
@@ -102,6 +119,13 @@ function Sidebar({ currentPage, onNavigate, user, onLogout }) {
               <span className="text-sm">Administração</span>
             </button>
           )}
+          <a
+            href="mailto:suporte@sysmath.com.br"
+            className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          >
+            <Mail size={18} />
+            <span className="text-sm">Suporte</span>
+          </a>
           <button
             onClick={onLogout}
             className="w-full flex items-center space-x-3 px-4 py-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"

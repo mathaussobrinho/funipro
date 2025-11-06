@@ -23,11 +23,13 @@ namespace FuniproApi.Services
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IConfiguration _configuration;
+        private readonly ApplicationDbContext _context;
 
-        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration)
+        public AuthService(UserManager<ApplicationUser> userManager, IConfiguration configuration, ApplicationDbContext context)
         {
             _userManager = userManager;
             _configuration = configuration;
+            _context = context;
         }
 
         public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
@@ -41,12 +43,27 @@ namespace FuniproApi.Services
             var roles = await _userManager.GetRolesAsync(user);
             var token = GenerateJwtToken(user, roles);
 
+            // Buscar módulos do usuário
+            var userModules = await _context.UserModules
+                .Where(um => um.UserId == user.Id)
+                .Include(um => um.Module)
+                .Where(um => um.Module.IsActive)
+                .Select(um => new ModuleDto
+                {
+                    Id = um.Module.Id,
+                    Name = um.Module.Name,
+                    Description = um.Module.Description,
+                    Key = um.Module.Key
+                })
+                .ToListAsync();
+
             return new AuthResponseDto
             {
                 Token = token,
                 UserId = user.Id,
                 Email = user.Email,
-                Role = roles.FirstOrDefault() ?? "User"
+                Role = roles.FirstOrDefault() ?? "User",
+                Modules = userModules
             };
         }
 
@@ -80,15 +97,47 @@ namespace FuniproApi.Services
 
             await _userManager.AddToRoleAsync(user, roleToAssign);
 
+            // Atribuir módulos se especificado
+            if (registerDto.ModuleIds != null && registerDto.ModuleIds.Any())
+            {
+                var modules = await _context.Modules
+                    .Where(m => registerDto.ModuleIds.Contains(m.Id) && m.IsActive)
+                    .ToListAsync();
+
+                var userModulesToAdd = modules.Select(m => new UserModule
+                {
+                    UserId = user.Id,
+                    ModuleId = m.Id
+                }).ToList();
+
+                _context.UserModules.AddRange(userModulesToAdd);
+                await _context.SaveChangesAsync();
+            }
+
             var roles = await _userManager.GetRolesAsync(user);
             var token = GenerateJwtToken(user, roles);
+
+            // Buscar módulos do usuário
+            var userModules = await _context.UserModules
+                .Where(um => um.UserId == user.Id)
+                .Include(um => um.Module)
+                .Where(um => um.Module.IsActive)
+                .Select(um => new ModuleDto
+                {
+                    Id = um.Module.Id,
+                    Name = um.Module.Name,
+                    Description = um.Module.Description,
+                    Key = um.Module.Key
+                })
+                .ToListAsync();
 
             return new AuthResponseDto
             {
                 Token = token,
                 UserId = user.Id,
                 Email = user.Email,
-                Role = roles.FirstOrDefault() ?? "User"
+                Role = roles.FirstOrDefault() ?? "User",
+                Modules = userModules
             };
         }
 
