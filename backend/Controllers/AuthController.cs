@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using FuniproApi.Models;
@@ -56,12 +57,20 @@ namespace FuniproApi.Controllers
         public async Task<IActionResult> GetUsers()
         {
             var users = await _authService.GetAllUsersAsync();
-            var userList = users.Select(u => new
+            var userManager = HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            
+            var userList = new List<object>();
+            foreach (var u in users)
             {
-                u.Id,
-                u.Email,
-                u.CreatedAt
-            });
+                var roles = await userManager.GetRolesAsync(u);
+                userList.Add(new
+                {
+                    u.Id,
+                    u.Email,
+                    u.CreatedAt,
+                    Role = roles.FirstOrDefault() ?? "User"
+                });
+            }
 
             return Ok(userList);
         }

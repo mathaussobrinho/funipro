@@ -133,6 +133,9 @@ function AdminPanel({ user, onLogout, onNavigate }) {
                     Email
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    Tipo de Usuário
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Data de Criação
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -145,6 +148,15 @@ function AdminPanel({ user, onLogout, onNavigate }) {
                   <tr key={userItem.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900 dark:text-white">{userItem.email}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
+                        userItem.role === 'Admin' 
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' 
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                      }`}>
+                        {userItem.role === 'Admin' ? 'Master' : 'Usuário Comum'}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-500 dark:text-gray-400">
