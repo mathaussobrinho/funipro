@@ -643,6 +643,8 @@ function DealModalComponent({ deal, onClose, onSave }) {
       const submitData = {
         ...formData,
         value: parseFloat(formData.value) || 0,
+        status: parseInt(formData.status) || 0,
+        priority: parseInt(formData.priority) || 1,
         expectedCloseDate: formData.expectedCloseDate || null,
         paymentDate: formData.paymentDate || null,
         birthday: formData.birthday || null,
