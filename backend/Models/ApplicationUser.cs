@@ -10,6 +10,48 @@ namespace FuniproApi.Models
         public ICollection<Deal> Deals { get; set; } = new List<Deal>();
         public ICollection<Inventory> Inventories { get; set; } = new List<Inventory>();
         public ICollection<SubLocation> SubLocations { get; set; } = new List<SubLocation>();
+        public ICollection<UserModule> UserModules { get; set; } = new List<UserModule>();
+    }
+
+    // Modelo de Módulo
+    public class Module
+    {
+        public int Id { get; set; }
+        
+        [Required]
+        [MaxLength(100)]
+        public string Name { get; set; }
+        
+        [MaxLength(255)]
+        public string? Description { get; set; }
+        
+        [Required]
+        [MaxLength(50)]
+        public string Key { get; set; } // Chave única do módulo (ex: "funnel", "inventory", "reports", "sublocation", "archived")
+        
+        public bool IsActive { get; set; } = true;
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        
+        public ICollection<UserModule> UserModules { get; set; } = new List<UserModule>();
+    }
+
+    // Relação muitos-para-muitos entre Usuário e Módulo
+    public class UserModule
+    {
+        public int Id { get; set; }
+        
+        [Required]
+        public string UserId { get; set; }
+        
+        public ApplicationUser User { get; set; }
+        
+        [Required]
+        public int ModuleId { get; set; }
+        
+        public Module Module { get; set; }
+        
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 
     public class Deal
@@ -112,6 +154,8 @@ namespace FuniproApi.Models
         public string Password { get; set; }
         
         public string? Role { get; set; }
+        
+        public List<int>? ModuleIds { get; set; } // IDs dos módulos que o usuário terá acesso
     }
 
     public class DealDto
@@ -211,6 +255,20 @@ namespace FuniproApi.Models
         public string UserId { get; set; }
         public string Email { get; set; }
         public string Role { get; set; }
+        public List<ModuleDto> Modules { get; set; } = new List<ModuleDto>();
+    }
+
+    public class ModuleDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public string Key { get; set; }
+    }
+
+    public class UpdateUserModulesDto
+    {
+        public List<int> ModuleIds { get; set; } = new List<int>();
     }
 
     public class UpdatePasswordDto

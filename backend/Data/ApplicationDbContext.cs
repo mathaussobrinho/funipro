@@ -15,6 +15,8 @@ namespace FuniproApi.Data
         public DbSet<Deal> Deals { get; set; }
         public DbSet<Inventory> Inventories { get; set; }
         public DbSet<SubLocation> SubLocations { get; set; }
+        public DbSet<Module> Modules { get; set; }
+        public DbSet<UserModule> UserModules { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -124,6 +126,37 @@ namespace FuniproApi.Data
                 entity.Property(e => e.DiscountValue).HasColumnType("decimal(18,2)").HasDefaultValue(0);
                 entity.Property(e => e.NetValue).HasColumnType("decimal(18,2)").HasDefaultValue(0);
                 entity.HasOne(s => s.User).WithMany(u => u.SubLocations).HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // Module configuration
+            builder.Entity<Module>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(255);
+                entity.Property(e => e.Key).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.HasIndex(e => e.Key).IsUnique();
+            });
+
+            // UserModule configuration (many-to-many)
+            builder.Entity<UserModule>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("CURRENT_TIMESTAMP");
+                
+                entity.HasOne(um => um.User)
+                    .WithMany(u => u.UserModules)
+                    .HasForeignKey(um => um.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                
+                entity.HasOne(um => um.Module)
+                    .WithMany(m => m.UserModules)
+                    .HasForeignKey(um => um.ModuleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                
+                // Evitar duplicatas
+                entity.HasIndex(e => new { e.UserId, e.ModuleId }).IsUnique();
             });
         }
     }

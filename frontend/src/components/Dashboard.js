@@ -7,6 +7,8 @@ function Dashboard({ user, onLogout, onNavigate }) {
   const [subLocations, setSubLocations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [viewingDeal, setViewingDeal] = useState(null);
   const [editingDeal, setEditingDeal] = useState(null);
   const [draggedDeal, setDraggedDeal] = useState(null);
 
@@ -107,7 +109,17 @@ function Dashboard({ user, onLogout, onNavigate }) {
     setShowModal(true);
   };
 
-  const handleEditDeal = (deal) => {
+  const handleViewDeal = (deal, e) => {
+    // Prevenir que o clique no card abra o modal se clicou em um botão
+    if (e.target.closest('button')) {
+      return;
+    }
+    setViewingDeal(deal);
+    setShowViewModal(true);
+  };
+
+  const handleEditDeal = (deal, e) => {
+    if (e) e.stopPropagation(); // Prevenir que o clique no botão abra o modal de visualização
     setEditingDeal(deal);
     setShowModal(true);
   };
@@ -291,7 +303,8 @@ function Dashboard({ user, onLogout, onNavigate }) {
                           key={deal.id}
                           draggable
                           onDragStart={(e) => handleDragStart(e, deal)}
-                          className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                          onClick={(e) => handleViewDeal(deal, e)}
+                          className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer ${
                             birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
                           }`}
                           style={birthdaySoon ? {
@@ -302,21 +315,27 @@ function Dashboard({ user, onLogout, onNavigate }) {
                           <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{deal.title}</h4>
                           <div className="flex space-x-1">
                             <button
-                              onClick={() => handleEditDeal(deal)}
+                              onClick={(e) => handleEditDeal(deal, e)}
                               className="text-gray-400 hover:text-blue-600 p-1"
                               title="Editar"
                             >
                               <Edit size={14} />
                             </button>
                             <button
-                              onClick={() => handleArchiveDeal(deal.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleArchiveDeal(deal.id);
+                              }}
                               className="text-gray-400 hover:text-yellow-600 p-1"
                               title="Arquivar"
                             >
                               <Archive size={14} />
                             </button>
                             <button
-                              onClick={() => handleDeleteDeal(deal.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteDeal(deal.id);
+                              }}
                               className="text-gray-400 hover:text-red-600 p-1"
                               title="Deletar"
                             >
@@ -450,7 +469,8 @@ function Dashboard({ user, onLogout, onNavigate }) {
                       key={deal.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, deal)}
-                      className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-move ${
+                      onClick={(e) => handleViewDeal(deal, e)}
+                      className={`bg-white dark:bg-gray-700 border dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer ${
                         birthdaySoon ? 'ring-2 ring-pink-400 ring-opacity-75 shadow-lg animate-pulse' : ''
                       }`}
                       style={birthdaySoon ? {
@@ -461,7 +481,7 @@ function Dashboard({ user, onLogout, onNavigate }) {
                       <h4 className="font-semibold text-gray-900 dark:text-white text-sm">{deal.title}</h4>
                       <div className="flex space-x-1">
                         <button
-                          onClick={() => handleEditDeal(deal)}
+                          onClick={(e) => handleEditDeal(deal, e)}
                           className="text-gray-400 hover:text-blue-600 p-1"
                           title="Editar"
                         >
@@ -551,7 +571,24 @@ function Dashboard({ user, onLogout, onNavigate }) {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal de Visualização */}
+      {showViewModal && viewingDeal && (
+        <DealViewModal
+          deal={viewingDeal}
+          onClose={() => {
+            setShowViewModal(false);
+            setViewingDeal(null);
+          }}
+          onEdit={(deal) => {
+            setShowViewModal(false);
+            setViewingDeal(null);
+            setEditingDeal(deal);
+            setShowModal(true);
+          }}
+        />
+      )}
+
+      {/* Modal de Edição/Criação */}
       {showModal && (
         <DealModalComponent
           deal={editingDeal}
@@ -560,6 +597,209 @@ function Dashboard({ user, onLogout, onNavigate }) {
         />
       )}
 
+    </div>
+  );
+}
+
+// Componente DealViewModal para visualizar detalhes
+function DealViewModal({ deal, onClose, onEdit }) {
+  const statusConfig = {
+    0: { name: 'Lead', color: 'bg-blue-500' },
+    1: { name: 'Qualificado', color: 'bg-yellow-500' },
+    2: { name: 'Proposta', color: 'bg-orange-500' },
+    3: { name: 'Negociação', color: 'bg-purple-500' },
+    4: { name: 'Fechado', color: 'bg-green-500' }
+  };
+
+  const priorityConfig = {
+    0: { name: 'Baixa', color: 'text-gray-600', bg: 'bg-gray-100' },
+    1: { name: 'Média', color: 'text-yellow-600', bg: 'bg-yellow-100' },
+    2: { name: 'Alta', color: 'text-red-600', bg: 'bg-red-100' }
+  };
+
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Não informado';
+    return new Date(dateString).toLocaleDateString('pt-BR');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" onClick={onClose}>
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between p-6 border-b dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Detalhes do Negócio
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 p-1"
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Título e Status */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">{deal.title}</h3>
+              <div className="flex items-center space-x-2">
+                <span className={`${statusConfig[deal.status]?.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                  {statusConfig[deal.status]?.name}
+                </span>
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${priorityConfig[deal.priority]?.bg} ${priorityConfig[deal.priority]?.color}`}>
+                  Prioridade: {priorityConfig[deal.priority]?.name}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Valor */}
+          <div className="bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/20 dark:to-blue-900/20 rounded-lg p-4 border border-green-200 dark:border-green-800">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Valor do Negócio</p>
+            <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+              {formatCurrency(deal.value)}
+            </p>
+            {deal.grossValue > 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                Valor Bruto: {formatCurrency(deal.grossValue)}
+              </p>
+            )}
+            {deal.netValue > 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Valor Líquido: {formatCurrency(deal.netValue)}
+              </p>
+            )}
+          </div>
+
+          {/* Informações da Empresa e Contato */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {deal.company && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Empresa</p>
+                <p className="text-base text-gray-900 dark:text-white">{deal.company}</p>
+              </div>
+            )}
+            {deal.contactName && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Nome do Contato</p>
+                <p className="text-base text-gray-900 dark:text-white">{deal.contactName}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Contato */}
+          {(deal.email || deal.phone) && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Contato</p>
+              <div className="space-y-2">
+                {deal.email && (
+                  <div className="flex items-center space-x-2 text-gray-900 dark:text-white">
+                    <Mail size={18} className="text-gray-500 dark:text-gray-400" />
+                    <a href={`mailto:${deal.email}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                      {deal.email}
+                    </a>
+                  </div>
+                )}
+                {deal.phone && (
+                  <div className="flex items-center space-x-2 text-gray-900 dark:text-white">
+                    <Phone size={18} className="text-gray-500 dark:text-gray-400" />
+                    <a href={`tel:${deal.phone}`} className="hover:text-blue-600 dark:hover:text-blue-400">
+                      {deal.phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Método de Pagamento */}
+          {deal.paymentMethod !== null && deal.paymentMethod !== undefined && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Método de Pagamento</p>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm ${
+                deal.paymentMethod === 0 ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                deal.paymentMethod === 1 ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                'bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+              }`}>
+                {deal.paymentMethod === 0 ? '💳 Cartão' :
+                 deal.paymentMethod === 1 ? '💸 PIX' :
+                 deal.paymentMethod === 2 ? '📄 Boleto' : '💵 Dinheiro'}
+              </span>
+            </div>
+          )}
+
+          {/* Datas */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {deal.birthday && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">🎂 Aniversário</p>
+                <p className="text-base text-gray-900 dark:text-white">{formatDate(deal.birthday)}</p>
+              </div>
+            )}
+            {deal.expectedCloseDate && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Data Prevista de Fechamento</p>
+                <p className="text-base text-gray-900 dark:text-white">{formatDate(deal.expectedCloseDate)}</p>
+              </div>
+            )}
+            {deal.paymentDate && (
+              <div>
+                <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Data de Pagamento</p>
+                <p className="text-base text-gray-900 dark:text-white">{formatDate(deal.paymentDate)}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Anotações */}
+          {deal.notes && (
+            <div>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">Anotações</p>
+              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 border dark:border-gray-600">
+                <p className="text-base text-gray-900 dark:text-white whitespace-pre-wrap">{deal.notes}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Informações do Sistema */}
+          <div className="border-t dark:border-gray-700 pt-4">
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-500 dark:text-gray-400">Criado em</p>
+                <p className="text-gray-900 dark:text-white">{formatDate(deal.createdAt)}</p>
+              </div>
+              {deal.updatedAt && (
+                <div>
+                  <p className="text-gray-500 dark:text-gray-400">Atualizado em</p>
+                  <p className="text-gray-900 dark:text-white">{formatDate(deal.updatedAt)}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 p-6 border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors"
+          >
+            Fechar
+          </button>
+          <button
+            onClick={() => onEdit(deal)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <Edit size={16} />
+            <span>Editar</span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
