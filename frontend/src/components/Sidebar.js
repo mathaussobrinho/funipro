@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingUp, Package, BarChart3, Building2, Archive, LogOut, Settings, Moon, Sun, HelpCircle, Mail } from 'lucide-react';
+import { TrendingUp, Package, BarChart3, Building2, Archive, LogOut, Settings, Moon, Sun, Mail } from 'lucide-react';
 
 function Sidebar({ currentPage, onNavigate, user, onLogout }) {
   const [darkMode, setDarkMode] = useState(false);

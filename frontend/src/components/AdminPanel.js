@@ -437,7 +437,6 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
   const [newPassword, setNewPassword] = useState('');
   const [selectedModuleIds, setSelectedModuleIds] = useState([]);
   const [modules, setModules] = useState([]);
-  const [userModules, setUserModules] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -446,6 +445,7 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
   useEffect(() => {
     fetchModules();
     fetchUserModules();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchModules = async () => {
@@ -475,7 +475,6 @@ function EditUserModal({ user: selectedUser, onClose, onSuccess }) {
       });
       if (response.ok) {
         const data = await response.json();
-        setUserModules(data);
         setSelectedModuleIds(data.map(m => m.id));
       }
     } catch (error) {

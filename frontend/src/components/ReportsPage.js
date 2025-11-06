@@ -11,6 +11,7 @@ function ReportsPage({ user, onLogout, onNavigate }) {
 
   useEffect(() => {
     fetchAllData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const fetchAllData = async () => {
