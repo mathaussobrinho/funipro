@@ -380,13 +380,28 @@ namespace FuniproApi.Services
                 deal.PaymentMethod = updateDealDto.PaymentMethod.Value;
             
             if (updateDealDto.ExpectedCloseDate.HasValue)
-                deal.ExpectedCloseDate = updateDealDto.ExpectedCloseDate.Value;
+            {
+                var date = updateDealDto.ExpectedCloseDate.Value;
+                deal.ExpectedCloseDate = date.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(date, DateTimeKind.Utc) 
+                    : date.ToUniversalTime();
+            }
             
             if (updateDealDto.PaymentDate.HasValue)
-                deal.PaymentDate = updateDealDto.PaymentDate.Value;
+            {
+                var date = updateDealDto.PaymentDate.Value;
+                deal.PaymentDate = date.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(date, DateTimeKind.Utc) 
+                    : date.ToUniversalTime();
+            }
             
             if (updateDealDto.Birthday.HasValue)
-                deal.Birthday = updateDealDto.Birthday.Value;
+            {
+                var date = updateDealDto.Birthday.Value;
+                deal.Birthday = date.Kind == DateTimeKind.Unspecified 
+                    ? DateTime.SpecifyKind(date, DateTimeKind.Utc) 
+                    : date.ToUniversalTime();
+            }
 
             if (updateDealDto.Notes != null)
                 deal.Notes = updateDealDto.Notes;
