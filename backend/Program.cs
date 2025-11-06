@@ -86,7 +86,9 @@ builder.Services.AddCors(options =>
     {
         builder.WithOrigins(
                    "http://localhost:3000",
+                   "http://funipro.shop",
                    "https://funipro.shop",
+                   "http://www.funipro.shop",
                    "https://www.funipro.shop",
                    "https://api.funipro.shop"
                )
