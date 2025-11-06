@@ -19,3 +19,8 @@ appsettings.Development.json
 node_modules/
 dist/
 .env
+
+# Database files
+*.db
+*.db-shm
+*.db-wal

@@ -18,28 +18,6 @@ namespace FuniproApi.Data
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            // Garantir foreign keys antes de salvar - SQLite precisa disso toda vez
-            var connection = Database.GetDbConnection();
-            if (connection is Microsoft.Data.Sqlite.SqliteConnection sqliteConnection)
-            {
-                var wasOpen = sqliteConnection.State == System.Data.ConnectionState.Open;
-                if (!wasOpen)
-                {
-                    await sqliteConnection.OpenAsync(cancellationToken);
-                }
-                
-                try
-                {
-                    using var command = sqliteConnection.CreateCommand();
-                    command.CommandText = "PRAGMA foreign_keys = ON;";
-                    await command.ExecuteNonQueryAsync(cancellationToken);
-                }
-                finally
-                {
-                    // Não fechar se já estava aberta
-                }
-            }
-            
             return await base.SaveChangesAsync(cancellationToken);
         }
 
@@ -96,10 +74,10 @@ namespace FuniproApi.Data
                     .HasMaxLength(2000); // Limite de 2000 caracteres
                 
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("datetime('now')");
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
                 
                 entity.Property(e => e.UpdatedAt)
-                    .HasDefaultValueSql("datetime('now')");
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
 
                 entity.Property(e => e.IsArchived)
                     .HasDefaultValue(false);
@@ -122,7 +100,7 @@ namespace FuniproApi.Data
             builder.Entity<ApplicationUser>(entity =>
             {
                 entity.Property(e => e.CreatedAt)
-                    .HasDefaultValueSql("datetime('now')");
+                    .HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
             // Inventory configuration
@@ -158,96 +136,18 @@ namespace FuniproApi.Data
         {
             try
             {
-                // Habilitar foreign keys no SQLite
-                try
-                {
-                    var conn = context.Database.GetDbConnection();
-                    if (conn is Microsoft.Data.Sqlite.SqliteConnection sqliteConnection)
-                    {
-                        await sqliteConnection.OpenAsync();
-                        using var pragmaCommand = sqliteConnection.CreateCommand();
-                        pragmaCommand.CommandText = "PRAGMA foreign_keys = ON;";
-                        await pragmaCommand.ExecuteNonQueryAsync();
-                    }
-                }
-                catch { }
-
-                // Verificar se precisa recriar o banco (se faltam colunas novas)
-                bool needsRecreate = false;
+                // Verificar se o banco existe e aplicar migrations
                 if (await context.Database.CanConnectAsync())
                 {
-                       try
-                       {
-                           // Verificar se as colunas novas existem na tabela Deals
-                           var conn = context.Database.GetDbConnection();
-                           await conn.OpenAsync();
-                           using var command = conn.CreateCommand();
-                           command.CommandText = @"
-                               SELECT COUNT(*) FROM pragma_table_info('Deals') 
-                               WHERE name IN ('Birthday', 'IsArchived', 'ArchivedAt')";
-                           var result = await command.ExecuteScalarAsync();
-                           var columnCount = Convert.ToInt64(result);
-                           
-                           // Verificar se todas as 3 colunas existem
-                           if (columnCount < 3)
-                           {
-                               Console.WriteLine("Banco existe mas faltam colunas novas (Birthday, IsArchived, ArchivedAt). Recriando...");
-                               needsRecreate = true;
-                           }
-                           else
-                           {
-                               Console.WriteLine("Banco de dados já existe e tem todas as colunas.");
-                           }
-                           await conn.CloseAsync();
-                       }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Erro ao verificar colunas: {ex.Message}. Recriando banco...");
-                        needsRecreate = true;
-                    }
+                    Console.WriteLine("Banco de dados já existe. Aplicando migrations...");
+                    await context.Database.MigrateAsync();
+                    Console.WriteLine("Migrations aplicadas com sucesso!");
                 }
                 else
                 {
-                    needsRecreate = true;
-                }
-
-                if (needsRecreate)
-                {
-                    Console.WriteLine("Criando/recriando banco de dados...");
-                    try
-                    {
-                        await context.Database.EnsureDeletedAsync();
-                    }
-                    catch { }
-                    
-                    await context.Database.EnsureCreatedAsync();
+                    Console.WriteLine("Criando banco de dados...");
+                    await context.Database.MigrateAsync();
                     Console.WriteLine("Banco de dados criado com sucesso!");
-                }
-                
-                // SEMPRE habilitar foreign keys após qualquer operação
-                try
-                {
-                    var conn = context.Database.GetDbConnection();
-                    if (conn is Microsoft.Data.Sqlite.SqliteConnection sqliteConnection)
-                    {
-                        var wasOpen = conn.State == System.Data.ConnectionState.Open;
-                        if (!wasOpen)
-                        {
-                            await conn.OpenAsync();
-                        }
-                        using var pragmaCommand = sqliteConnection.CreateCommand();
-                        pragmaCommand.CommandText = "PRAGMA foreign_keys = ON;";
-                        await pragmaCommand.ExecuteNonQueryAsync();
-                        if (!wasOpen)
-                        {
-                            await conn.CloseAsync();
-                        }
-                        Console.WriteLine("Foreign keys habilitadas no SQLite");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Erro ao habilitar foreign keys: {ex.Message}");
                 }
 
                 // Create roles

@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: funipro-postgres
+    environment:
+      POSTGRES_DB: funipro
+      POSTGRES_USER: funipro_user
+      POSTGRES_PASSWORD: funipro_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U funipro_user -d funipro"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - funipro-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: funipro-backend
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=funipro;Username=funipro_user;Password=funipro_pass
+    ports:
+      - "5000:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - funipro-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  funipro-network:
+    driver: bridge
+

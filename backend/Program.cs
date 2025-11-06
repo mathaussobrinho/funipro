@@ -26,48 +26,22 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// Database - SEMPRE USA SQLITE LOCALMENTE (Data Source=)
+// Database - PostgreSQL
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 Console.WriteLine($"Ambiente: {builder.Environment.EnvironmentName}");
 Console.WriteLine($"Connection String: {connectionString}");
 
-// FORÇA SQLite se a connection string começar com "Data Source=" OU se estiver em Development
-if (builder.Environment.IsDevelopment())
-{
-    // Em Development, SEMPRE usa SQLite
-    connectionString = "Data Source=funipro.db;Foreign Keys=True";
-    Console.WriteLine("FORÇANDO SQLite para desenvolvimento local!");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+// Sempre usa PostgreSQL
+Console.WriteLine("Usando PostgreSQL como banco de dados");
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString, npgsqlOptions =>
     {
-        options.UseSqlite(connectionString, sqliteOptions =>
-        {
-            sqliteOptions.CommandTimeout(30);
-        });
-    });
-}
-else if (connectionString?.StartsWith("Data Source=") == true)
-{
-    // Produção pode usar SQLite se a connection string for SQLite
-    Console.WriteLine("Usando SQLite como banco de dados");
-    if (!connectionString.Contains("Foreign Keys"))
-    {
-        connectionString += ";Foreign Keys=True";
-    }
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    {
-        options.UseSqlite(connectionString, sqliteOptions =>
-        {
-            sqliteOptions.CommandTimeout(30);
-        });
-    });
-}
-else
-{
-    // Produção usando SQL Server
-    Console.WriteLine("Usando SQL Server como banco de dados");
-    builder.Services.AddDbContext<ApplicationDbContext>(options =>
-        options.UseSqlServer(connectionString));
-}
+        npgsqlOptions.CommandTimeout(30);
+        npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorCodesToAdd: null);
+    }));
 
 // Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
